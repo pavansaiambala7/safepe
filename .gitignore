@@ -1,0 +1,34 @@
+# === Java / Maven ===
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.log
+.mvn/wrapper/maven-wrapper.jar
+
+# === IDE ===
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+# === Environment ===
+.env
+*.env.local
+
+# === OS ===
+.DS_Store
+Thumbs.db
+
+# === Node / Frontend ===
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# === Docker ===
+docker-compose.override.yml

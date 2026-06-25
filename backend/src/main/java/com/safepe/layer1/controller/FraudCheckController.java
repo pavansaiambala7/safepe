@@ -1,15 +1,14 @@
 package com.safepe.layer1.controller;
 
 import com.safepe.dto.FraudCheckRequest;
-import com.safepe.dto.FraudCheckResponse;
 import com.safepe.dto.ScamSMSRequest;
-import com.safepe.dto.ScamSMSResponse;
-import com.safepe.layer1.service.FraudDetectionService;
-import com.safepe.layer1.service.GeminiAIService;
+import com.safepe.service.FraudDetectionService;
+import com.safepe.service.GeminiAIService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/fraud")
@@ -24,10 +23,9 @@ public class FraudCheckController {
      * Problem 3: Fraud warnings BEFORE payment, not after.
      */
     @PostMapping("/check")
-    public ResponseEntity<FraudCheckResponse> checkMerchant(
+    public ResponseEntity<?> checkMerchant(
             @RequestBody FraudCheckRequest request) {
-        FraudCheckResponse response = fraudDetectionService
-            .checkMerchant(request.merchantName(), request.upiId());
+        Map<String, Object> response = fraudDetectionService.checkUpiFraudRisk(request.upiId());
         return ResponseEntity.ok(response);
     }
 
@@ -36,10 +34,10 @@ public class FraudCheckController {
      * Problem 3: Scam SMS detector — paste message, get instant verdict.
      */
     @PostMapping("/analyze-sms")
-    public ResponseEntity<ScamSMSResponse> analyzeScamSMS(
+    public ResponseEntity<?> analyzeScamSMS(
             @RequestBody ScamSMSRequest request) {
-        ScamSMSResponse response = geminiAIService.analyzeScamSMS(request.content());
-        return ResponseEntity.ok(response);
+        String aiAnalysis = geminiAIService.analyzeMessageForFraud(request.content());
+        return ResponseEntity.ok(Map.of("analysis", aiAnalysis));
     }
 
     /**
@@ -47,6 +45,6 @@ public class FraudCheckController {
      */
     @GetMapping("/search")
     public ResponseEntity<?> searchMerchants(@RequestParam String query) {
-        return ResponseEntity.ok(fraudDetectionService.checkMerchant(query, null));
+        return ResponseEntity.ok(fraudDetectionService.checkUpiFraudRisk(query));
     }
 }

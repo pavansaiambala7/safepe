@@ -287,7 +287,7 @@ public class VaultService {
         EncryptedUPI upi = EncryptedUPI.builder()
                 .userId(userId)
                 .upiHash(hash)
-                .encryptedData(encrypted)
+                .encryptedUpi(encrypted)
                 .maskedUpi(masked)
                 .build();
 

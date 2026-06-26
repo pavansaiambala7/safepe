@@ -35,6 +35,8 @@ services:
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-rzp_test_secret_here}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-gemini_key_here}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-clerk_secret_here}
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-vF9wE2xP8sT4qU7yZ1bM5cN3kV8aH6rJ}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-dummy_webhook_secret}
     depends_on:
       db:
         condition: service_healthy

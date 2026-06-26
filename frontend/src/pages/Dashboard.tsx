@@ -34,9 +34,14 @@ export default function Dashboard() {
         const res = await api.get('/history/transactions', {
           headers: { Authorization: `Bearer ${token}` }
         });
-        setTransactions(res.data);
+        if (Array.isArray(res.data)) {
+          setTransactions(res.data);
+        } else {
+          setTransactions([]);
+        }
       } catch (err) {
         console.error('Failed to fetch transactions', err);
+        setTransactions([]);
       } finally {
         setLoading(false);
       }

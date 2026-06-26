@@ -29,6 +29,8 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
       - SPRING_DATASOURCE_USERNAME=safepe_user
       - SPRING_DATASOURCE_PASSWORD=safepe_password
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
       - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-rzp_test_secret_here}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-gemini_key_here}

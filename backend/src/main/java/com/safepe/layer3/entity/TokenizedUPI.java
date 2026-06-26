@@ -3,22 +3,22 @@ package com.safepe.layer3.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Layer 3 — Encrypted Vault entity for UPI IDs.
- * UPI handles are stored encrypted; a SHA-256 hash enables lookups.
- * The masked UPI (e.g. "r***@oksbi") is safe for display.
+ * Layer 3 — Tokenized entity for UPI IDs.
+ * PCI DSS Compliant: Stores Razorpay Network Tokens instead of raw UPI handles.
  */
 @Entity
-@Table(name = "encrypted_upi_ids")
+@Table(name = "tokenized_upi_ids")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EncryptedUPI {
+public class TokenizedUPI {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -28,17 +28,20 @@ public class EncryptedUPI {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "upi_hash", unique = true, nullable = false)
-    private String upiHash; // SHA-256 hash for lookup
+    @Column(name = "razorpay_customer_id", nullable = false)
+    private String razorpayCustomerId;
 
-    @Lob
-    @Column(name = "encrypted_upi", nullable = false)
-    private byte[] encryptedUpi; // AES-256-GCM encrypted UPI handle
+    @Column(name = "razorpay_token_id", unique = true, nullable = false)
+    private String razorpayTokenId; 
 
     @Column(name = "masked_upi", length = 50)
     private String maskedUpi; // e.g. "r***@oksbi"
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-   private LocalDateTime createdAt;
+    private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

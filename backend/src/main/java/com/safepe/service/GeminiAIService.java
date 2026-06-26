@@ -26,6 +26,7 @@ public class GeminiAIService {
     private final String model;
     private final String baseUrl;
     private final RestTemplate restTemplate; // Spring's tool for making HTTP requests
+    private String cachedFDRates = null;
 
     // Spring injects these values from application.yml (which reads from .env)
     public GeminiAIService(
@@ -39,6 +40,22 @@ public class GeminiAIService {
         this.restTemplate = new RestTemplate();
         
         log.info("🤖 Gemini AI Service initialized with model: {}", model);
+    }
+
+    /**
+     * Automatically fetch FD rates when the backend starts up
+     */
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        log.info("🚀 Application started! Automatically pre-fetching FD Rates in the background...");
+        new Thread(() -> {
+            try {
+                this.cachedFDRates = fetchRatesFromGemini();
+                log.info("✅ Successfully pre-fetched and cached FD rates from AI!");
+            } catch (Exception e) {
+                log.error("❌ Failed to pre-fetch FD rates: {}", e.getMessage());
+            }
+        }).start();
     }
 
     /**
@@ -77,8 +94,19 @@ public class GeminiAIService {
             // 5. Send the POST request over the internet to Google!
             Map response = restTemplate.postForObject(url, request, Map.class);
             
-            // In a real app we'd parse this cleanly, but we'll just return it for now
-            return "AI Analysis Complete! (Raw response returned)";
+            if (response != null && response.containsKey("candidates")) {
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                    if (content != null && content.containsKey("parts")) {
+                        List<Map<String, Object>> partsList = (List<Map<String, Object>>) content.get("parts");
+                        if (!partsList.isEmpty()) {
+                            return (String) partsList.get(0).get("text");
+                        }
+                    }
+                }
+            }
+            return "Could not parse AI response. Please try again.";
             
         } catch (Exception e) {
             log.error("❌ Failed to call Gemini API. Did you put the API key in .env? Error: {}", e.getMessage());
@@ -87,23 +115,25 @@ public class GeminiAIService {
     }
 
     /**
-     * Asks Gemini AI to analyze current Fixed Deposit (FD) interest rates
-     * and recommend the best bank for the user's requirements.
-     * 
-     * @param userQuery The user's query (e.g., "Which bank has the best 1-year FD rate?")
-     * @return AI's recommendation as a String
+     * Returns the cached FD rates instantly to the user.
      */
     public String analyzeFDRates(String userQuery) {
-        log.info("📈 Asking Gemini AI for FD Rate advice: {}", userQuery);
-        
+        if (cachedFDRates != null) {
+            log.info("⚡ Returning instantly cached FD rates!");
+            return cachedFDRates;
+        }
+        log.info("⚠️ Cache miss! Fetching FD rates directly from Gemini...");
+        return fetchRatesFromGemini();
+    }
+
+    private String fetchRatesFromGemini() {
         String url = String.format("%s/models/%s:generateContent?key=%s", baseUrl, model, apiKey);
 
-        // Prompt Engineering for Financial Advice
-        String prompt = "You are a financial advisor for SafePe bank in India. " +
-                "The user is asking about Fixed Deposit (FD) interest rates. " +
-                "Provide the current top 3 banks with the best FD rates based on their query. " +
-                "Keep the answer structured, concise, and easy to read. " +
-                "User Query: \"" + userQuery + "\"";
+        // Prompt Engineering - Replaced Jio with Axis Bank and updated Kotak name
+        String prompt = "You are a financial advisor for SafePe bank. Provide the current best Fixed Deposit (FD) interest rates for both General and Senior Citizens for exactly these 10 banks: HDFC, SBI, ICICI, Canara, Kotak Mahindra Bank, Yes Bank, Axis Bank, Airtel Payments Bank, Union Bank, Federal Bank. " +
+                "Order the banks by the highest general citizen rate descending. " +
+                "IMPORTANT: Return the response ONLY as a valid JSON array of objects. Do not include markdown like ```json, just raw JSON. " +
+                "Each object MUST have keys: 'bank' (string), 'domain' (string, e.g., 'hdfcbank.com', 'sbi.co.in'), 'normal' (string, e.g., '7.10%'), and 'senior' (string, e.g., '7.60%').";
 
         Map<String, Object> requestBody = new HashMap<>();
         Map<String, Object> parts = new HashMap<>();
@@ -118,7 +148,20 @@ public class GeminiAIService {
 
         try {
             Map response = restTemplate.postForObject(url, request, Map.class);
-            return "AI Analysis Complete! (Raw FD Rate response returned)";
+            
+            if (response != null && response.containsKey("candidates")) {
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                    if (content != null && content.containsKey("parts")) {
+                        List<Map<String, Object>> partsList = (List<Map<String, Object>>) content.get("parts");
+                        if (!partsList.isEmpty()) {
+                            return (String) partsList.get(0).get("text");
+                        }
+                    }
+                }
+            }
+            return "Could not parse AI response. Please try again.";
         } catch (Exception e) {
             log.error("❌ Failed to fetch FD rates from AI: {}", e.getMessage());
             return "Error: Could not retrieve FD rates at this time.";

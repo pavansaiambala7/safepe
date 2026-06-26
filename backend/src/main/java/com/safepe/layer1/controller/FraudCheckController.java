@@ -40,6 +40,13 @@ public class FraudCheckController {
         return ResponseEntity.ok(Map.of("analysis", aiAnalysis));
     }
 
+    @PostMapping("/fd-rates")
+    public ResponseEntity<?> analyzeFDRates(
+            @RequestBody ScamSMSRequest request) { // Reusing ScamSMSRequest for the 'content' field
+        String aiAnalysis = geminiAIService.analyzeFDRates(request.content());
+        return ResponseEntity.ok(Map.of("analysis", aiAnalysis));
+    }
+
     /**
      * Search merchants by name — returns list of matching merchants.
      */

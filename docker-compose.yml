@@ -1,36 +1,54 @@
 version: '3.8'
 
 services:
-  # ── PostgreSQL ──
-  postgres:
+  db:
     image: postgres:15-alpine
-    container_name: safepe-db
+    container_name: safepe-postgres
     environment:
-      POSTGRES_DB: safepe
-      POSTGRES_USER: ${DB_USERNAME:-postgres}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: safepe_user
+      POSTGRES_PASSWORD: safepe_password
+      POSTGRES_DB: safepe_db
     ports:
       - "5432:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U safepe_user -d safepe_db"]
+      interval: 5s
       timeout: 5s
       retries: 5
 
-  # ── Redis ──
-  redis:
-    image: redis:7-alpine
-    container_name: safepe-redis
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safepe-backend
     ports:
-      - "6379:6379"
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
+      - SPRING_DATASOURCE_USERNAME=safepe_user
+      - SPRING_DATASOURCE_PASSWORD=safepe_password
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-rzp_test_secret_here}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-gemini_key_here}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-clerk_secret_here}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: safepe-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_VITE_API_URL=http://localhost:8080/api
+      - VITE_VITE_CLERK_PUBLISHABLE_KEY=${VITE_VITE_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsubG9jYWw}
+    depends_on:
+      - backend
 
 volumes:
-  pgdata:
+  postgres_data:

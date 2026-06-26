@@ -3,22 +3,22 @@ package com.safepe.layer3.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Layer 3 — Encrypted Vault entity for bank accounts.
- * Full account details are AES-256-GCM encrypted; a SHA-256 hash enables lookups.
- * Non-sensitive metadata (last four, bank name, IFSC) is stored in cleartext for display.
+ * Layer 3 — Tokenized entity for bank accounts.
+ * PCI DSS Compliant: Stores Razorpay Network Tokens instead of raw account numbers.
  */
 @Entity
-@Table(name = "encrypted_accounts")
+@Table(name = "tokenized_accounts")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EncryptedAccount {
+public class TokenizedAccount {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -28,12 +28,11 @@ public class EncryptedAccount {
     @Column(name = "user_id", nullable = false)
     private String userId;
 
-    @Column(name = "account_hash", unique = true, nullable = false)
-    private String accountHash; // SHA-256 hash for deduplication & lookup
+    @Column(name = "razorpay_customer_id", nullable = false)
+    private String razorpayCustomerId;
 
-    @Lob
-    @Column(name = "encrypted_data", nullable = false)
-    private byte[] encryptedData; // AES-256-GCM encrypted JSON
+    @Column(name = "razorpay_token_id", unique = true, nullable = false)
+    private String razorpayTokenId; 
 
     @Column(name = "account_last_four", length = 4)
     private String accountLastFour;
@@ -47,4 +46,8 @@ public class EncryptedAccount {
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+    
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
 }

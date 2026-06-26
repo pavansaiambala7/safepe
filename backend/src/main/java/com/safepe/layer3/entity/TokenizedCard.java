@@ -9,17 +9,16 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
- * Layer 3 — Encrypted Vault entity for card data.
- * Card details are stored as AES-256-GCM encrypted JSON blobs.
- * A SHA-256 hash of the card number enables lookups without decryption.
+ * Layer 3 — Tokenized entity for card data.
+ * PCI DSS Compliant: Stores Razorpay Network Tokens instead of raw card numbers.
  */
 @Entity
-@Table(name = "encrypted_cards")
+@Table(name = "tokenized_cards")
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EncryptedCard {
+public class TokenizedCard {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -29,12 +28,11 @@ public class EncryptedCard {
     @Column(name = "user_id", nullable = false)
     private String userId; // Clerk user ID
 
-    @Column(name = "card_hash", unique = true, nullable = false)
-    private String cardHash; // SHA-256 hash for deduplication & lookup
+    @Column(name = "razorpay_customer_id", nullable = false)
+    private String razorpayCustomerId; 
 
-    @Lob
-    @Column(name = "encrypted_data", nullable = false)
-    private byte[] encryptedData; // AES-256-GCM encrypted JSON
+    @Column(name = "razorpay_token_id", unique = true, nullable = false)
+    private String razorpayTokenId; 
 
     @Column(name = "card_last_four", length = 4)
     private String cardLastFour;

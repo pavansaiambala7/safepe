@@ -54,11 +54,11 @@ public class FraudDetectionService {
                 result.put("message", "⚠️ Caution: Unknown or new merchant.");
             }
         } else {
-            // The UPI ID is not in our database of 550 merchants
+            // The UPI ID is not in our database of known fraudsters — it's likely safe
             result.put("status", "NOT_FOUND");
-            result.put("trustScore", 50.0); // Neutral score for unknown IDs
-            result.put("riskLevel", "UNKNOWN");
-            result.put("message", "⚠️ We have no data on this UPI ID. Proceed with caution.");
+            result.put("trustScore", 70.0); // Secure score — not in fraud database
+            result.put("riskLevel", "SECURE");
+            result.put("message", "✅ This UPI ID is not in our fraud database. Secure to proceed.");
         }
 
         return result;

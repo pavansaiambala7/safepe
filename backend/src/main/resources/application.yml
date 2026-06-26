@@ -9,20 +9,22 @@ server:
 
 # ── PostgreSQL ───────────────────────────────────────────────────────────────
 spring:
+  config:
+    import: optional:file:../.env[.properties]
   datasource:
-    url: jdbc:postgresql://localhost:5432/safepe
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
-    driver-class-name: org.postgresql.Driver
+    url: jdbc:h2:mem:safepe;DB_CLOSE_DELAY=-1
+    username: sa
+    password: password
+    driver-class-name: org.h2.Driver
 
   # ── JPA / Hibernate ──────────────────────────────────────────────────────
   jpa:
     hibernate:
-      ddl-auto: update
+      ddl-auto: create-drop
     show-sql: true
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
+        dialect: org.hibernate.dialect.H2Dialect
         format_sql: true
 
   # ── Redis ────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ safepe:
   # Gemini AI — fraud-risk scoring
   gemini:
     api-key: ${GEMINI_API_KEY}
-    model: gemini-2.0-flash
+    model: gemini-2.5-flash
     base-url: https://generativelanguage.googleapis.com/v1beta
 
   # Razorpay — payment gateway
@@ -48,8 +50,8 @@ safepe:
 
   # Clerk — authentication provider
   clerk:
-    issuer: https://${CLERK_DOMAIN}
-    jwks-url: https://${CLERK_DOMAIN}/.well-known/jwks.json
+    issuer: https://creative-muskox-36.clerk.accounts.dev
+    jwks-url: https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json
 
   # Vault — field-level encryption
   encryption:

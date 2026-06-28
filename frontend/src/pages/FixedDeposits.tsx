@@ -93,10 +93,30 @@ export default function FixedDeposits() {
       </style>
 
       {loading ? (
-        <div className="surface-panel" style={{ textAlign: 'center', padding: '48px 24px' }}>
-          <Bot size={48} color="var(--color-primary)" className="floating" style={{ margin: '0 auto 16px auto' }} />
-          <h3 style={{ marginBottom: '8px' }}>Gemini AI is analyzing current market rates...</h3>
-          <p style={{ color: 'var(--color-text-secondary)' }}>Fetching the highest FD rates for your selected banks.</p>
+        <div className="surface-panel" style={{ overflow: 'hidden', padding: '0', border: '1px solid var(--color-border)' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <thead>
+              <tr style={{ background: '#f8fafc', borderBottom: '2px solid var(--color-border)' }}>
+                <th style={{ padding: '16px' }}><div className="skeleton skeleton-text" style={{ width: '80px' }}></div></th>
+                <th style={{ padding: '16px' }}><div className="skeleton skeleton-text" style={{ width: '120px' }}></div></th>
+                <th style={{ padding: '16px' }}><div className="skeleton skeleton-text" style={{ width: '120px' }}></div></th>
+              </tr>
+            </thead>
+            <tbody>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <tr key={i} style={{ borderBottom: '1px solid var(--color-border)' }}>
+                  <td style={{ padding: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div className="skeleton" style={{ width: '32px', height: '32px', borderRadius: '50%' }}></div>
+                      <div className="skeleton skeleton-text" style={{ width: '100px' }}></div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '16px' }}><div className="skeleton skeleton-text" style={{ width: '60px' }}></div></td>
+                  <td style={{ padding: '16px' }}><div className="skeleton skeleton-text" style={{ width: '60px' }}></div></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : error ? (
         <div className="surface-panel status-danger" style={{ textAlign: 'center', padding: '24px' }}>

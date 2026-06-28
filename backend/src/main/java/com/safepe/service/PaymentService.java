@@ -40,6 +40,9 @@ public class PaymentService {
     @Value("${safepe.razorpay.webhook-secret}")
     private String webhookSecret;
 
+    @Value("${safepe.razorpay.key-id}")
+    private String keyId;
+
     /**
      * 1. Creates a Razorpay Order
      * 2. Saves a PENDING transaction in our database
@@ -85,6 +88,7 @@ public class PaymentService {
             response.put("amount", amount);
             response.put("currency", "INR");
             response.put("dbTransactionId", transaction.getId());
+            response.put("keyId", keyId); // Dynamically pass Key ID to frontend
             return response;
 
         } catch (RazorpayException e) {

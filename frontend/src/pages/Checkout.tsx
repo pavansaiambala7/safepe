@@ -73,10 +73,11 @@ export default function Checkout() {
       setStatus('paying');
       const orderRes = await api.post('/payments/create', { upiId, amount }, { headers });
       const orderId = orderRes.data.orderId;
+      const keyId = orderRes.data.keyId; // Get key dynamically from backend
 
       // Open the Razorpay Window!
       const options = {
-        key: import.meta.env.VITE_VITE_RAZORPAY_KEY_ID || 'rzp_test_T5AtiMDfqh5J2N',
+        key: keyId || import.meta.env.VITE_VITE_RAZORPAY_KEY_ID || 'rzp_test_T5AtiMDfqh5J2N',
         amount: parseFloat(amount) * 100,
         currency: 'INR',
         name: 'SafePe Secure Checkout',

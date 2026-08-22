@@ -9,6 +9,7 @@ import {
   Home,
   Brain,
   Radio,
+  Layers,
   Github
 } from 'lucide-react';
 
@@ -36,13 +37,18 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         </button>
 
         <h2 style={{ color: 'var(--color-highlight)', marginBottom: '32px', fontFamily: 'var(--font-heading)', paddingLeft: '16px' }}>
-          Menu
+          SafePe Menu
         </h2>
 
         <nav style={{ display: 'flex', flexDirection: 'column' }}>
           <Link to="/" className="sidebar-link" onClick={onClose}>
             <Home size={24} color="#10b981" /> 
             Home
+          </Link>
+
+          <Link to="/architecture" className="sidebar-link" onClick={onClose}>
+            <Layers size={24} color="#10b981" />
+            Architecture & Specs
           </Link>
           
           <Link to="/split" className="sidebar-link" onClick={onClose}>
@@ -54,8 +60,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <PieChart size={24} color="#10b981" />
             Spend Analysis
           </Link>
-          
-
           
           <Link to="/fd-rates" className="sidebar-link" onClick={onClose}>
             <TrendingUp size={24} color="#10b981" />
@@ -74,7 +78,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
 
           <Link to="/events" className="sidebar-link" onClick={onClose}>
             <Radio size={24} color="#06b6d4" />
-            Event Monitor
+            Kafka Event Monitor
           </Link>
 
           {/* GitHub Author Profile */}
@@ -86,7 +90,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}
           >
             <Github size={24} color="#1e293b" />
-            GitHub Profile
+            Author: @pavansaiambala7
           </a>
         </nav>
       </div>

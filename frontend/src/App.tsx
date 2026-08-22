@@ -23,6 +23,7 @@ import CheckBalance from './pages/CheckBalance';
 import Cards from './pages/Cards';
 import AgenticFraudAnalyzer from './pages/AgenticFraudAnalyzer';
 import KafkaEventMonitor from './pages/KafkaEventMonitor';
+import Architecture from './pages/Architecture';
 
 const clerkPubKey = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
 
@@ -69,7 +70,7 @@ function InnerApp() {
             </div>
             
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-              {/* PhonePe Style Notification Bell (Always Visible) */}
+              {/* PhonePe Style Emerald Green Notification Bell with Sound Chimes (Always Visible) */}
               <NotificationBell />
               
               <SignedIn>
@@ -96,6 +97,7 @@ function InnerApp() {
           <SignedIn>
             <Routes>
               <Route path="/" element={<Dashboard />} />
+              <Route path="/architecture" element={<Architecture />} />
               <Route path="/pay" element={<Checkout />} />
               <Route path="/sms-scanner" element={<ScamScanner />} />
               <Route path="/chatbot" element={<ScamScanner />} />

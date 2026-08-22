@@ -68,21 +68,22 @@ function InnerApp() {
               </Link>
             </div>
             
-            <SignedIn>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                {/* PhonePe Style Notification Bell */}
-                <NotificationBell />
+            <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
+              {/* PhonePe Style Notification Bell (Always Visible) */}
+              <NotificationBell />
+              
+              <SignedIn>
                 <UserButton />
-              </div>
-            </SignedIn>
+              </SignedIn>
 
-            <SignedOut>
-              <SignInButton mode="modal">
-                <button className="btn-primary" style={{ padding: '10px 20px', borderRadius: '24px' }}>
-                  <UserCircle size={20} /> Login
-                </button>
-              </SignInButton>
-            </SignedOut>
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <button className="btn-primary" style={{ padding: '8px 18px', borderRadius: '24px', fontSize: '14px' }}>
+                    <UserCircle size={18} /> Login
+                  </button>
+                </SignInButton>
+              </SignedOut>
+            </div>
           </header>
 
         {/* Hamburger Sidebar Component */}

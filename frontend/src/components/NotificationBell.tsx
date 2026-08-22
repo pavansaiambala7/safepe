@@ -147,14 +147,14 @@ export default function NotificationBell() {
 
   return (
     <div style={{ position: 'relative' }} ref={panelRef}>
-      {/* ── Bell Icon Trigger ────────────────────────────────────────────── */}
+      {/* ── Bell Icon Trigger (Vibrant Green SafePe Theme) ───────────────── */}
       <button
         onClick={togglePanel}
         className={`bell-btn ${isRinging ? 'ring-animation' : ''}`}
         aria-label="Notifications"
         style={{
-          background: isOpen ? 'var(--color-bg-surface-hover)' : 'white',
-          border: '1px solid var(--color-border)',
+          background: isOpen ? '#10b98125' : '#10b98115',
+          border: '2px solid #10b981',
           borderRadius: '50%',
           width: 44,
           height: 44,
@@ -163,11 +163,11 @@ export default function NotificationBell() {
           justifyContent: 'center',
           cursor: 'pointer',
           position: 'relative',
-          transition: 'all 0.3s ease',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+          transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: '0 2px 10px rgba(16, 185, 129, 0.25)'
         }}
       >
-        <Bell size={22} color={unreadCount > 0 ? 'var(--color-accent)' : 'var(--color-text-primary)'} />
+        <Bell size={22} color="#059669" strokeWidth={2.4} />
         
         {unreadCount > 0 && (
           <span

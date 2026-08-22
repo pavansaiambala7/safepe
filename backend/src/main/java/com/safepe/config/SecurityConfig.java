@@ -26,6 +26,7 @@ public class SecurityConfig {
                 .requestMatchers("/api/health").permitAll()
                 .requestMatchers("/api/webhooks/**").permitAll()
                 .requestMatchers("/api/v1/public/**").permitAll()
+                .requestMatchers("/api/v1/public/notifications/**").permitAll()
                 .anyRequest().authenticated()
             )
             .addFilterBefore(clerkJwtFilter, UsernamePasswordAuthenticationFilter.class)

@@ -1,7 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { audioAlerts } from '../utils/audioAlert';
 
-export type NotificationType = 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'SECURITY';
+export type NotificationType = 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'REFUND_INITIATED' | 'SECURITY';
 
 export interface FraudDetail {
   threatCategory: string;
@@ -34,6 +34,7 @@ interface NotificationContextType {
   unreadCount: number;
   activeToast: NotificationItem | null;
   isSoundEnabled: boolean;
+  sseConnected: boolean;
   toggleSound: () => void;
   addNotification: (n: Omit<NotificationItem, 'id' | 'timestamp' | 'isRead'>) => void;
   markAsRead: (id: string) => void;
@@ -49,7 +50,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-1',
     type: 'FRAUD_ALERT',
-    title: '🚨 High-Risk Fraud Blocked & Escrow Refund Initiated',
+    title: 'High-Risk Fraud Blocked & Escrow Refund Initiated',
     message: 'Payment of ₹5,000 to customercare_kyc@ybl was intercepted before settlement. Merchant trust score is 0%.',
     timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     isRead: false,
@@ -70,9 +71,20 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
     }
   },
   {
+    id: 'notif-1b',
+    type: 'REFUND_INITIATED',
+    title: 'Escrow Refund Initiated',
+    message: 'Automated clawback of ₹5,000 triggered. Refund is being processed via Razorpay escrow protection.',
+    timestamp: new Date(Date.now() - 4.5 * 60 * 1000).toISOString(),
+    isRead: false,
+    amount: 5000,
+    upiId: 'customercare_kyc@ybl',
+    referenceId: 'rzp_rfnd_92817482'
+  },
+  {
     id: 'notif-2',
     type: 'ESCROW_REFUND',
-    title: '🛡️ SafePe Escrow Refund Completed',
+    title: 'SafePe Escrow Refund Completed',
     message: '₹5,000.00 has been credited back to your HDFC Bank (•••• 8842). Escrow protection activated.',
     timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
     isRead: false,
@@ -95,7 +107,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-3',
     type: 'SUCCESS',
-    title: '✅ Payment Successful',
+    title: 'Payment Successful',
     message: 'Payment of ₹1,450 to BESCOM Electricity Bill was completed securely via Bharat BillPay (BBPS).',
     timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
     isRead: true,
@@ -106,7 +118,7 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
   {
     id: 'notif-4',
     type: 'SECURITY',
-    title: '🔐 Token Vault Security Update',
+    title: 'Token Vault Security Update',
     message: 'Your HDFC Bank account was tokenized under PCI-DSS compliance standards with AES-256 vault encryption.',
     timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
     isRead: true,
@@ -124,10 +136,97 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const [activeToast, setActiveToast] = useState<NotificationItem | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => audioAlerts.isEnabled());
+  const [sseConnected, setSseConnected] = useState(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     localStorage.setItem('safepe_notifications', JSON.stringify(notifications));
   }, [notifications]);
+
+  // ── SSE Connection to Backend Kafka Notification Stream ──────────────
+  useEffect(() => {
+    let retryTimer: ReturnType<typeof setTimeout>;
+    let retryCount = 0;
+    const MAX_RETRIES = 10;
+
+    const connectSSE = () => {
+      // Close existing connection if any
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+
+      const eventSource = new EventSource('/api/v1/public/notifications/stream');
+      eventSourceRef.current = eventSource;
+
+      eventSource.addEventListener('connected', () => {
+        console.log('[SafePe SSE] Connected to notification stream');
+        setSseConnected(true);
+        retryCount = 0; // Reset retry counter on successful connection
+      });
+
+      eventSource.addEventListener('notification', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          console.log('[SafePe SSE] Received notification:', data.type, data.title);
+
+          // Map backend NotificationEvent to frontend NotificationItem
+          const notifType = data.type as NotificationType;
+          const fraudDetails: FraudDetail | undefined =
+            (data.threatCategory || data.refundId) ? {
+              threatCategory: data.threatCategory || '',
+              similarityMatch: data.similarityMatch || 0,
+              matchedPatternDescription: data.matchedPatternDescription || '',
+              merchantName: data.merchantName || '',
+              merchantUpi: data.merchantUpi || data.upiId || '',
+              merchantTrustScore: data.merchantTrustScore || 0,
+              reportedCount: data.reportedCount || 0,
+              action: data.action || 'ALLOW',
+              refundId: data.refundId,
+              refundAmount: data.refundAmount
+            } : undefined;
+
+          addNotification({
+            type: notifType,
+            title: data.title,
+            message: data.message,
+            amount: data.amount,
+            upiId: data.upiId,
+            referenceId: data.referenceId,
+            fraudDetails
+          });
+        } catch (err) {
+          console.warn('[SafePe SSE] Failed to parse notification:', err);
+        }
+      });
+
+      eventSource.onerror = () => {
+        setSseConnected(false);
+        eventSource.close();
+        eventSourceRef.current = null;
+
+        // Exponential backoff retry
+        if (retryCount < MAX_RETRIES) {
+          const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
+          retryCount++;
+          console.log(`[SafePe SSE] Reconnecting in ${delay}ms (attempt ${retryCount}/${MAX_RETRIES})...`);
+          retryTimer = setTimeout(connectSSE, delay);
+        } else {
+          console.log('[SafePe SSE] Max retries reached. SSE notifications offline.');
+        }
+      };
+    };
+
+    connectSSE();
+
+    return () => {
+      clearTimeout(retryTimer);
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleSound = () => {
     const newState = audioAlerts.toggleSound();
@@ -144,7 +243,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       isRead: false
     };
 
-    // Play synthesized acoustic chime for this notification type!
+    // Play synthesized acoustic chime for this notification type
     audioAlerts.playSoundForType(n.type);
 
     setNotifications(prev => [newNotif, ...prev]);
@@ -180,7 +279,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const simulateSuccess = (amount = 500, upiId = 'reliance.retail@oksbi') => {
     addNotification({
       type: 'SUCCESS',
-      title: '✅ Transaction Successful',
+      title: 'Transaction Successful',
       message: `Payment of ₹${amount.toLocaleString('en-IN')} to ${upiId} was completed successfully via Razorpay UPI.`,
       amount,
       upiId,
@@ -189,10 +288,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   const simulateFraudAndRefund = (amount = 2500, upiId = 'urgent.refund892@ybl') => {
-    // 1. Immediately fire the Fraud Alert Notification
+    const refundId = `rzp_rfnd_${Date.now().toString().slice(-8)}`;
+
+    // 1. Fraud Alert
     addNotification({
       type: 'FRAUD_ALERT',
-      title: '🚨 High-Risk Fraud Intercepted by SafePe AI',
+      title: 'High-Risk Fraud Intercepted by SafePe AI',
       message: `Payment of ₹${amount.toLocaleString('en-IN')} to ${upiId} was blocked. Threat: Impersonation & Fake Refund Scam.`,
       amount,
       upiId,
@@ -206,20 +307,32 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         merchantTrustScore: 0.05,
         reportedCount: 24,
         action: 'BLOCK',
-        refundId: `rzp_rfnd_${Date.now().toString().slice(-8)}`,
+        refundId,
         refundAmount: amount
       }
     });
 
-    // 2. Fire the Escrow Refund Completed notification 2 seconds later (matching background Kafka speed)
+    // 2. Refund Initiated (1.5s later)
+    setTimeout(() => {
+      addNotification({
+        type: 'REFUND_INITIATED',
+        title: 'Escrow Refund Initiated',
+        message: `Automated clawback of ₹${amount.toLocaleString('en-IN')} triggered. Refund is being processed via Razorpay escrow.`,
+        amount,
+        upiId,
+        referenceId: refundId
+      });
+    }, 1500);
+
+    // 3. Refund Completed (3.5s later)
     setTimeout(() => {
       addNotification({
         type: 'ESCROW_REFUND',
-        title: '🛡️ SafePe Escrow Refund Completed',
+        title: 'SafePe Escrow Refund Completed',
         message: `₹${amount.toLocaleString('en-IN')}.00 has been refunded to your bank. Escrow auto-clawback protected your funds.`,
         amount,
         upiId,
-        referenceId: `rzp_rfnd_${Date.now().toString().slice(-8)}`,
+        referenceId: refundId,
         fraudDetails: {
           threatCategory: 'IMPERSONATION_REFUND_SCAM',
           similarityMatch: 96.5,
@@ -229,11 +342,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           merchantTrustScore: 0.05,
           reportedCount: 24,
           action: 'BLOCK',
-          refundId: `rzp_rfnd_${Date.now().toString().slice(-8)}`,
+          refundId,
           refundAmount: amount
         }
       });
-    }, 2200);
+    }, 3500);
   };
 
   return (
@@ -243,6 +356,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         unreadCount,
         activeToast,
         isSoundEnabled,
+        sseConnected,
         toggleSound,
         addNotification,
         markAsRead,

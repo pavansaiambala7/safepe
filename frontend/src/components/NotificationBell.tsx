@@ -1,43 +1,48 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Bell, 
-  CheckCircle2, 
-  ShieldAlert, 
-  ShieldCheck, 
-  RotateCcw, 
-  Lock, 
-  X, 
-  ChevronDown, 
-  ChevronUp, 
-  Trash2, 
-  CheckCheck, 
-  Zap, 
+import {
+  Bell,
+  CheckCircle2,
+  ShieldAlert,
+  ShieldCheck,
+  RotateCcw,
+  Lock,
+  X,
+  ChevronDown,
+  ChevronUp,
+  Trash2,
+  CheckCheck,
+  Zap,
   AlertTriangle,
   ExternalLink,
   Info,
   Volume2,
-  VolumeX
+  VolumeX,
+  Hourglass,
+  Wifi,
+  WifiOff
 } from 'lucide-react';
-import { useNotifications, NotificationItem, NotificationType } from '../context/NotificationContext';
+import { useNotifications } from '../context/NotificationContext';
+import type { NotificationItem, NotificationType } from '../context/NotificationContext';
 
 export default function NotificationBell() {
-  const { 
-    notifications, 
-    unreadCount, 
-    activeToast, 
+  const {
+    notifications,
+    unreadCount,
+    activeToast,
     isSoundEnabled,
+    sseConnected,
     toggleSound,
-    markAsRead, 
-    markAllAsRead, 
-    deleteNotification, 
-    clearAll, 
+    markAsRead,
+    markAllAsRead,
+    deleteNotification,
+    clearAll,
     closeToast,
     simulateSuccess,
     simulateFraudAndRefund
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
-  const [filter, setFilter] = useState<'ALL' | 'SUCCESS' | 'FRAUD_ESCROW' | 'SECURITY'>('ALL');
+  const [filter, setFilter] = useState<'ALL' | 'SUCCESS' | 'FRAUD_ESCROW' | 'REFUNDS' | 'SECURITY'>('ALL');
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isRinging, setIsRinging] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -77,7 +82,8 @@ export default function NotificationBell() {
   const filteredNotifications = notifications.filter(n => {
     if (filter === 'ALL') return true;
     if (filter === 'SUCCESS') return n.type === 'SUCCESS';
-    if (filter === 'FRAUD_ESCROW') return n.type === 'FRAUD_ALERT' || n.type === 'ESCROW_REFUND';
+    if (filter === 'FRAUD_ESCROW') return n.type === 'FRAUD_ALERT';
+    if (filter === 'REFUNDS') return n.type === 'ESCROW_REFUND' || n.type === 'REFUND_INITIATED';
     if (filter === 'SECURITY') return n.type === 'SECURITY';
     return true;
   });
@@ -103,6 +109,8 @@ export default function NotificationBell() {
         return <ShieldAlert size={20} color="#ef4444" />;
       case 'ESCROW_REFUND':
         return <RotateCcw size={20} color="#8b5cf6" />;
+      case 'REFUND_INITIATED':
+        return <Hourglass size={20} color="#f59e0b" />;
       case 'SECURITY':
         return <Lock size={20} color="#3b82f6" />;
     }
@@ -134,6 +142,14 @@ export default function NotificationBell() {
           badgeColor: '#7c3aed',
           label: 'REFUND COMPLETED'
         };
+      case 'REFUND_INITIATED':
+        return {
+          bg: '#f59e0b15',
+          border: 'rgba(245, 158, 11, 0.35)',
+          badgeBg: '#f59e0b25',
+          badgeColor: '#d97706',
+          label: 'REFUND INITIATED'
+        };
       case 'SECURITY':
         return {
           bg: '#3b82f615',
@@ -147,7 +163,7 @@ export default function NotificationBell() {
 
   return (
     <div style={{ position: 'relative' }} ref={panelRef}>
-      {/* ── Bell Icon Trigger (Vibrant Green SafePe Theme) ───────────────── */}
+      {/* Bell Icon Trigger */}
       <button
         onClick={togglePanel}
         className={`bell-btn ${isRinging ? 'ring-animation' : ''}`}
@@ -168,7 +184,7 @@ export default function NotificationBell() {
         }}
       >
         <Bell size={22} color="#059669" strokeWidth={2.4} />
-        
+
         {unreadCount > 0 && (
           <span
             style={{
@@ -196,7 +212,7 @@ export default function NotificationBell() {
         )}
       </button>
 
-      {/* ── Slide-in Floating Toast for Real-Time Alerts ─────────────────── */}
+      {/* Slide-in Floating Toast for Real-Time Alerts */}
       {activeToast && (
         <div
           className="toast-container"
@@ -211,7 +227,12 @@ export default function NotificationBell() {
             borderRadius: 16,
             padding: 16,
             boxShadow: '0 12px 40px rgba(0,0,0,0.15), 0 0 0 1px var(--color-border)',
-            borderLeft: `5px solid ${activeToast.type === 'FRAUD_ALERT' ? '#ef4444' : activeToast.type === 'ESCROW_REFUND' ? '#8b5cf6' : '#10b981'}`,
+            borderLeft: `5px solid ${
+              activeToast.type === 'FRAUD_ALERT' ? '#ef4444' :
+              activeToast.type === 'ESCROW_REFUND' ? '#8b5cf6' :
+              activeToast.type === 'REFUND_INITIATED' ? '#f59e0b' :
+              '#10b981'
+            }`,
             zIndex: 9999,
             animation: 'slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1)'
           }}
@@ -244,7 +265,7 @@ export default function NotificationBell() {
         </div>
       )}
 
-      {/* ── Notification Dropdown Center (PhonePe Glassmorphism Style) ────── */}
+      {/* Notification Dropdown Panel */}
       {isOpen && (
         <div
           className="notification-panel"
@@ -286,8 +307,17 @@ export default function NotificationBell() {
                 <h3 style={{ fontSize: 16, fontWeight: 700, margin: 0, color: 'var(--color-text-primary)' }}>
                   Notifications
                 </h3>
-                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
                   {unreadCount > 0 ? `${unreadCount} unread alerts` : 'All caught up!'}
+                  {sseConnected ? (
+                    <span title="Live stream connected" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: '#10b981' }}>
+                      <Wifi size={10} /> Live
+                    </span>
+                  ) : (
+                    <span title="Live stream disconnected" style={{ display: 'inline-flex', alignItems: 'center', gap: 2, color: '#94a3b8' }}>
+                      <WifiOff size={10} />
+                    </span>
+                  )}
                 </span>
               </div>
             </div>
@@ -365,7 +395,7 @@ export default function NotificationBell() {
             </div>
           </div>
 
-          {/* Simulation Action Bar (One-click Testing) */}
+          {/* Simulation Action Bar */}
           <div
             style={{
               padding: '10px 16px',
@@ -427,8 +457,9 @@ export default function NotificationBell() {
           >
             {[
               { key: 'ALL', label: 'All' },
-              { key: 'SUCCESS', label: 'Transactions' },
-              { key: 'FRAUD_ESCROW', label: '🚨 Fraud & Escrow' },
+              { key: 'SUCCESS', label: 'Payments' },
+              { key: 'FRAUD_ESCROW', label: 'Fraud' },
+              { key: 'REFUNDS', label: 'Refunds' },
               { key: 'SECURITY', label: 'Vault' }
             ].map(tab => (
               <button
@@ -564,7 +595,7 @@ export default function NotificationBell() {
                               }}
                             >
                               {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                              {isExpanded ? 'Hide AI Evidence & Escrow Proof' : '🔍 View AI Reasoning & Escrow Refund Proof'}
+                              {isExpanded ? 'Hide AI Evidence & Escrow Proof' : 'View AI Reasoning & Escrow Refund Proof'}
                             </button>
 
                             {isExpanded && (
@@ -630,12 +661,18 @@ export default function NotificationBell() {
             <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
               <ShieldCheck size={13} color="#10b981" /> SafePe Escrow & AI Defense Active
             </span>
-            <span>KRaft Event-Driven</span>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              {sseConnected ? (
+                <><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', display: 'inline-block', animation: 'pulse 2s infinite' }} /> Kafka Live</>
+              ) : (
+                <><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#94a3b8', display: 'inline-block' }} /> Offline</>
+              )}
+            </span>
           </div>
         </div>
       )}
 
-      {/* ── Keyframe Animations ────────────────────────────────────────── */}
+      {/* Keyframe Animations */}
       <style>{`
         .ring-animation {
           animation: bellShake 0.8s ease-in-out;

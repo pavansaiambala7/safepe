@@ -10,7 +10,7 @@ import {
   Brain,
   Radio,
   Layers,
-  Github
+  GitFork
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -89,7 +89,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             className="sidebar-link"
             style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}
           >
-            <Github size={24} color="#1e293b" />
+            <GitFork size={24} color="#1e293b" />
             Author: @pavansaiambala7
           </a>
         </nav>

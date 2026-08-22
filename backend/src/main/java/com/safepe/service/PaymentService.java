@@ -4,6 +4,7 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
+import com.safepe.dto.NotificationEvent;
 import com.safepe.model.Merchant;
 import com.safepe.model.Transaction;
 import com.safepe.repository.MerchantRepository;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final MerchantRepository merchantRepository;
     private final PaymentEventProducer paymentEventProducer;
+    private final NotificationSSEService notificationSSEService;
 
     @Value("${safepe.razorpay.webhook-secret}")
     private String webhookSecret;
@@ -138,7 +141,7 @@ public class PaymentService {
             boolean isVerified = Utils.verifyPaymentSignature(options, webhookSecret);
 
             if (isVerified) {
-                log.info("✅ Payment Verified Successfully!");
+                log.info("Payment Verified Successfully!");
                 // Update our database to SUCCESS
                 List<Transaction> transactions = transactionRepository.findByRazorpayOrderId(orderId);
                 if (!transactions.isEmpty()) {
@@ -146,6 +149,25 @@ public class PaymentService {
                     tx.setStatus("SUCCESS");
                     tx.setRazorpayPaymentId(paymentId);
                     transactionRepository.save(tx);
+
+                    // Push SUCCESS notification to SSE bell
+                    try {
+                        notificationSSEService.broadcast(NotificationEvent.builder()
+                                .id("notif-success-" + UUID.randomUUID().toString().substring(0, 8))
+                                .type("SUCCESS")
+                                .title("Transaction Successful")
+                                .message(String.format("Payment of %s to %s was completed successfully via Razorpay UPI.",
+                                        tx.getAmount(),
+                                        tx.getMerchant() != null ? tx.getMerchant().getUpiIdMasked() : "merchant"))
+                                .amount(tx.getAmount())
+                                .upiId(tx.getMerchant() != null ? tx.getMerchant().getUpiIdMasked() : null)
+                                .referenceId(paymentId)
+                                .transactionId(tx.getId() != null ? tx.getId().toString() : null)
+                                .timestamp(LocalDateTime.now())
+                                .build());
+                    } catch (Exception sseEx) {
+                        log.warn("SSE notification broadcast failed (non-blocking): {}", sseEx.getMessage());
+                    }
                 }
                 return true;
             } else {

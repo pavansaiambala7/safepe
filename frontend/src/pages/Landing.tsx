@@ -1,5 +1,5 @@
 import { 
-  ShieldCheck, Lock, Zap, Github, Server, Cpu, Radio, 
+  ShieldCheck, Lock, Zap, GitFork, Server, Cpu, Radio, 
   Database, Bell, CheckCircle2, ArrowRight, Activity, Volume2 
 } from 'lucide-react';
 import { SignInButton } from '@clerk/react';
@@ -85,7 +85,7 @@ export default function Landing() {
               transition: 'all 0.3s ease'
             }}
           >
-            <Github size={18} color="#1e293b" />
+            <GitFork size={18} color="#1e293b" />
             GitHub Repository
           </a>
         </div>

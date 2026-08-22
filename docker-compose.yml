@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # ── Layer 3: Data & Storage ────────────────────────────────────────────────
+  db:
+    image: pgvector/pgvector:pg15
+    container_name: safepe-postgres
+    environment:
+      POSTGRES_USER: safepe_user
+      POSTGRES_PASSWORD: safepe_password
+      POSTGRES_DB: safepe_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U safepe_user -d safepe_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ── Redis — Vector Cache & Session Store ───────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: safepe-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ── Apache Kafka — Event-Driven Messaging (KRaft Mode, No Zookeeper) ──────
+  kafka:
+    image: apache/kafka:3.7.0
+    container_name: safepe-kafka
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+      CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
+    ports:
+      - "9092:9092"
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  # ── Layer 2: Business Logic (Spring Boot API) ─────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: safepe-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
+      - SPRING_DATASOURCE_USERNAME=safepe_user
+      - SPRING_DATASOURCE_PASSWORD=safepe_password
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
+      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
+      - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-rzp_test_secret_here}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-gemini_key_here}
+      - CLERK_SECRET_KEY=${CLERK_SECRET_KEY:-clerk_secret_here}
+      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-vF9wE2xP8sT4qU7yZ1bM5cN3kV8aH6rJ}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-dummy_webhook_secret}
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  # ── Layer 1: Presentation (React Frontend) ────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: safepe-frontend
+    ports:
+      - "3000:80"
+    environment:
+      - VITE_VITE_API_URL=/api
+      - VITE_VITE_CLERK_PUBLISHABLE_KEY=${VITE_VITE_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsubG9jYWw}
+      - VITE_VITE_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
+    depends_on:
+      - backend
+
+volumes:
+  postgres_data:
+  redis_data:

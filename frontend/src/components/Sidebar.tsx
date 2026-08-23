@@ -4,13 +4,13 @@ import {
   PieChart, 
   Send, 
   TrendingUp, 
-  ShieldAlert,
   X,
   Home,
   Brain,
   Radio,
   Layers,
-  GitFork
+  GitFork,
+  Bot
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -67,8 +67,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </Link>
           
           <Link to="/chatbot" className="sidebar-link" onClick={onClose}>
-            <ShieldAlert size={24} color="#ef4444" />
-            Fraud Detector
+            <Bot size={24} color="#8b5cf6" />
+            AI Assistant
           </Link>
 
           <Link to="/agentic-fraud" className="sidebar-link" onClick={onClose}>

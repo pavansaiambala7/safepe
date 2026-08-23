@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, AlertTriangle, CheckCircle, ShieldCheck, Loader2 } from 'lucide-react';
+import { Bot, Send, Sparkles, Loader2 } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/react';
 import api from '../api';
 
@@ -7,7 +7,6 @@ interface ChatMessage {
   id: number;
   role: 'user' | 'assistant';
   content: string;
-  isDangerous?: boolean;
   timestamp: Date;
 }
 
@@ -17,8 +16,7 @@ export default function Scanner() {
     {
       id: 0,
       role: 'assistant',
-      content: "Hi! I'm SafePe's Fraud Detector 🛡️\n\nI can help you detect fraud and scams. Paste any suspicious SMS, WhatsApp message, or email and I'll analyze it for you instantly.\n\nTry something like:\n• \"Your KYC is expiring. Click here to update: http://fake-link.com\"\n• \"Congratulations! You've won ₹50,000. Share your UPI PIN to claim.\"",
-      isDangerous: false,
+      content: "Hi! I'm SafePe Assistant 🤖\n\nI'm your AI helper inside SafePe. Ask me anything — I can help with payments, budgeting tips, how to use SafePe features, or just general questions.\n\nTry asking:\n• \"How do I send money to a UPI ID?\"\n• \"Give me 3 quick tips to save money each month.\"\n• \"Explain what a fixed deposit is in simple words.\"",
       timestamp: new Date()
     }
   ]);
@@ -55,31 +53,23 @@ export default function Scanner() {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
-      const response = await api.post('/fraud/analyze-sms', { content: text }, { headers });
-      const analysis = response.data.analysis;
-      
-      const isDangerous = analysis?.toLowerCase().includes("fraud") || 
-                          analysis?.toLowerCase().includes("scam") || 
-                          analysis?.toLowerCase().includes("suspicious") || 
-                          analysis?.toLowerCase().includes("danger") ||
-                          analysis?.toLowerCase().includes("phishing");
+      const response = await api.post('/assistant/chat', { message: text }, { headers });
+      const reply = response.data.reply;
 
       const botMsg: ChatMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: analysis,
-        isDangerous,
+        content: reply,
         timestamp: new Date()
       };
 
       setMessages(prev => [...prev, botMsg]);
     } catch (error) {
-      console.error("Failed to scan message", error);
+      console.error("Failed to get assistant reply", error);
       const errorMsg: ChatMessage = {
         id: Date.now() + 1,
         role: 'assistant',
-        content: "Sorry, I couldn't analyze that message right now. Please try again in a moment.",
-        isDangerous: false,
+        content: "Sorry, I couldn't respond right now. Please try again in a moment.",
         timestamp: new Date()
       };
       setMessages(prev => [...prev, errorMsg]);
@@ -101,11 +91,11 @@ export default function Scanner() {
   };
 
   return (
-    <div style={{ 
-      maxWidth: '800px', 
-      margin: '0 auto', 
-      height: 'calc(100vh - 120px)', 
-      display: 'flex', 
+    <div style={{
+      maxWidth: '800px',
+      margin: '0 auto',
+      height: 'calc(100vh - 120px)',
+      display: 'flex',
       flexDirection: 'column',
       background: 'var(--color-bg-primary)',
       borderRadius: '16px',
@@ -113,32 +103,32 @@ export default function Scanner() {
       border: '1px solid var(--color-border)'
     }}>
       {/* Chat Header */}
-      <div style={{ 
-        padding: '16px 20px', 
+      <div style={{
+        padding: '16px 20px',
         background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
-        display: 'flex', 
-        alignItems: 'center', 
+        display: 'flex',
+        alignItems: 'center',
         gap: '12px',
         flexShrink: 0
       }}>
-        <div style={{ 
-          background: 'rgba(255,255,255,0.2)', 
-          padding: '8px', 
+        <div style={{
+          background: 'rgba(255,255,255,0.2)',
+          padding: '8px',
           borderRadius: '12px',
           backdropFilter: 'blur(10px)'
         }}>
           <Bot size={28} color="white" />
         </div>
         <div>
-          <h2 style={{ fontSize: '18px', color: '#fff', fontWeight: '700', margin: 0 }}>Fraud Detector</h2>
+          <h2 style={{ fontSize: '18px', color: '#fff', fontWeight: '700', margin: 0 }}>SafePe Assistant</h2>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.8)', margin: 0 }}>
-            SafePe Fraud Detection • Powered by Gemini AI
+            AI Assistant • Powered by Gemini AI
           </p>
         </div>
-        <div style={{ 
-          marginLeft: 'auto', 
-          display: 'flex', 
-          alignItems: 'center', 
+        <div style={{
+          marginLeft: 'auto',
+          display: 'flex',
+          alignItems: 'center',
           gap: '6px',
           background: 'rgba(16, 185, 129, 0.3)',
           padding: '4px 12px',
@@ -150,9 +140,9 @@ export default function Scanner() {
       </div>
 
       {/* Messages Area */}
-      <div style={{ 
-        flex: 1, 
-        overflowY: 'auto', 
+      <div style={{
+        flex: 1,
+        overflowY: 'auto',
         padding: '20px',
         display: 'flex',
         flexDirection: 'column',
@@ -160,10 +150,10 @@ export default function Scanner() {
         background: 'var(--color-bg-secondary)'
       }}>
         {messages.map(msg => (
-          <div 
-            key={msg.id} 
-            style={{ 
-              display: 'flex', 
+          <div
+            key={msg.id}
+            style={{
+              display: 'flex',
               justifyContent: msg.role === 'user' ? 'flex-end' : 'flex-start',
               animation: 'chat-slide-in 0.3s ease-out'
             }}
@@ -171,62 +161,39 @@ export default function Scanner() {
             <div style={{ maxWidth: '80%', display: 'flex', gap: '8px', alignItems: 'flex-end' }}>
               {/* Bot avatar */}
               {msg.role === 'assistant' && (
-                <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '50%', 
-                  background: msg.isDangerous ? 'linear-gradient(135deg, #ef4444, #dc2626)' : 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0
                 }}>
-                  {msg.isDangerous ? <AlertTriangle size={16} color="#fff" /> : <Bot size={16} color="#fff" />}
+                  <Bot size={16} color="#fff" />
                 </div>
               )}
 
               <div>
-                <div style={{ 
-                  padding: '12px 16px', 
-                  borderRadius: msg.role === 'user' 
-                    ? '16px 16px 4px 16px' 
+                <div style={{
+                  padding: '12px 16px',
+                  borderRadius: msg.role === 'user'
+                    ? '16px 16px 4px 16px'
                     : '16px 16px 16px 4px',
-                  background: msg.role === 'user' 
-                    ? 'linear-gradient(135deg, #10b981, #059669)' 
-                    : msg.isDangerous 
-                      ? 'rgba(239, 68, 68, 0.1)' 
-                      : 'var(--color-bg-surface)',
+                  background: msg.role === 'user'
+                    ? 'linear-gradient(135deg, #10b981, #059669)'
+                    : 'var(--color-bg-surface)',
                   color: msg.role === 'user' ? '#fff' : 'var(--color-text-primary)',
-                  border: msg.role === 'assistant' 
-                    ? msg.isDangerous 
-                      ? '1px solid rgba(239, 68, 68, 0.3)' 
-                      : '1px solid var(--color-border)' 
+                  border: msg.role === 'assistant'
+                    ? '1px solid var(--color-border)'
                     : 'none',
                   lineHeight: '1.6',
                   fontSize: '14px',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word'
                 }}>
-                  {/* Risk indicator for dangerous messages */}
-                  {msg.role === 'assistant' && msg.isDangerous && (
-                    <div style={{ 
-                      display: 'flex', alignItems: 'center', gap: '8px', 
-                      marginBottom: '8px', color: '#ef4444', fontWeight: '600', fontSize: '13px'
-                    }}>
-                      <AlertTriangle size={16} />
-                      ⚠️ High Risk Detected
-                    </div>
-                  )}
-                  {msg.role === 'assistant' && msg.isDangerous === false && msg.id !== 0 && (
-                    <div style={{ 
-                      display: 'flex', alignItems: 'center', gap: '8px', 
-                      marginBottom: '8px', color: '#10b981', fontWeight: '600', fontSize: '13px'
-                    }}>
-                      <CheckCircle size={16} />
-                      Looks Safe
-                    </div>
-                  )}
                   {msg.content}
                 </div>
-                <div style={{ 
-                  fontSize: '11px', 
-                  color: 'var(--color-text-secondary)', 
+                <div style={{
+                  fontSize: '11px',
+                  color: 'var(--color-text-secondary)',
                   marginTop: '4px',
                   textAlign: msg.role === 'user' ? 'right' : 'left',
                   paddingLeft: msg.role === 'assistant' ? '4px' : '0',
@@ -238,8 +205,8 @@ export default function Scanner() {
 
               {/* User avatar */}
               {msg.role === 'user' && (
-                <div style={{ 
-                  width: '32px', height: '32px', borderRadius: '50%', 
+                <div style={{
+                  width: '32px', height: '32px', borderRadius: '50%',
                   background: 'linear-gradient(135deg, #10b981, #059669)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
@@ -255,16 +222,16 @@ export default function Scanner() {
         {/* Typing indicator */}
         {loading && (
           <div style={{ display: 'flex', alignItems: 'flex-end', gap: '8px', animation: 'chat-slide-in 0.3s ease-out' }}>
-            <div style={{ 
-              width: '32px', height: '32px', borderRadius: '50%', 
+            <div style={{
+              width: '32px', height: '32px', borderRadius: '50%',
               background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               flexShrink: 0
             }}>
               <Bot size={16} color="#fff" />
             </div>
-            <div style={{ 
-              padding: '16px 20px', 
+            <div style={{
+              padding: '16px 20px',
               borderRadius: '16px 16px 16px 4px',
               background: 'var(--color-bg-surface)',
               border: '1px solid var(--color-border)',
@@ -274,7 +241,7 @@ export default function Scanner() {
               <div className="typing-dot" style={{ animationDelay: '150ms' }} />
               <div className="typing-dot" style={{ animationDelay: '300ms' }} />
               <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginLeft: '8px' }}>
-                AI is analyzing...
+                Assistant is typing...
               </span>
             </div>
           </div>
@@ -284,15 +251,15 @@ export default function Scanner() {
       </div>
 
       {/* Input Area */}
-      <div style={{ 
-        padding: '16px 20px', 
+      <div style={{
+        padding: '16px 20px',
         background: 'var(--color-bg-primary)',
         borderTop: '1px solid var(--color-border)',
         flexShrink: 0
       }}>
-        <div style={{ 
-          display: 'flex', 
-          gap: '12px', 
+        <div style={{
+          display: 'flex',
+          gap: '12px',
           alignItems: 'flex-end',
           background: 'var(--color-bg-secondary)',
           borderRadius: '16px',
@@ -305,7 +272,7 @@ export default function Scanner() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Paste a suspicious SMS or message here..."
+            placeholder="Ask SafePe Assistant anything..."
             rows={1}
             style={{
               flex: 1,
@@ -329,8 +296,8 @@ export default function Scanner() {
               height: '44px',
               borderRadius: '12px',
               border: 'none',
-              background: loading || !input.trim() 
-                ? 'var(--color-bg-surface-hover)' 
+              background: loading || !input.trim()
+                ? 'var(--color-bg-surface-hover)'
                 : 'linear-gradient(135deg, #10b981, #059669)',
               color: '#fff',
               display: 'flex',
@@ -344,13 +311,13 @@ export default function Scanner() {
             {loading ? <Loader2 size={20} className="spin" /> : <Send size={20} />}
           </button>
         </div>
-        <div style={{ 
-          display: 'flex', alignItems: 'center', gap: '6px', 
-          justifyContent: 'center', marginTop: '8px' 
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '6px',
+          justifyContent: 'center', marginTop: '8px'
         }}>
-          <ShieldCheck size={12} color="var(--color-text-secondary)" />
+          <Sparkles size={12} color="var(--color-text-secondary)" />
           <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>
-            End-to-end encrypted • Powered by Gemini AI
+            Powered by Gemini AI
           </span>
         </div>
       </div>

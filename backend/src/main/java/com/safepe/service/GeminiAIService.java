@@ -161,6 +161,73 @@ public class GeminiAIService {
     }
 
     /**
+     * General-purpose AI assistant chat (SafePe Assistant).
+     * =====================================================
+     * Answers general user questions via Gemini — NOT limited to fraud.
+     * Used by the in-app AI chatbot. Reuses the same in-memory cache.
+     *
+     * @param userMessage The user's chat message
+     * @return AI assistant's reply as a String
+     */
+    public String chatWithAssistant(String userMessage) {
+        // ── Check cache first ────────────────────────────────────────
+        int cacheKey = ("chat::" + userMessage).hashCode();
+        CachedResponse cached = responseCache.get(cacheKey);
+        if (cached != null && !cached.isExpired()) {
+            log.info("⚡ Cache HIT for assistant chat (skipping Gemini API call)");
+            return cached.response;
+        }
+
+        log.info("💬 Assistant chat: {}", userMessage.substring(0, Math.min(80, userMessage.length())));
+        long startTime = System.currentTimeMillis();
+
+        String url = String.format("%s/models/%s:generateContent?key=%s", baseUrl, model, apiKey);
+
+        // General assistant persona (not fraud-specific)
+        String prompt = "You are SafePe Assistant, a friendly and helpful AI assistant inside the SafePe payments app. " +
+                "Answer the user's question clearly and concisely. You can help with general questions, " +
+                "payments guidance, budgeting tips, and how to use SafePe features. " +
+                "Use a warm, conversational tone and keep answers to the point. " +
+                "If the user shares something that looks like a scam, gently warn them.\n\n" +
+                "User: " + userMessage;
+
+        Map<String, Object> requestBody = new HashMap<>();
+        Map<String, Object> parts = new HashMap<>();
+        parts.put("text", prompt);
+        Map<String, Object> contents = new HashMap<>();
+        contents.put("parts", List.of(parts));
+        requestBody.put("contents", List.of(contents));
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpEntity<Map<String, Object>> request = new HttpEntity<>(requestBody, headers);
+
+        try {
+            Map response = restTemplate.postForObject(url, request, Map.class);
+            if (response != null && response.containsKey("candidates")) {
+                List<Map<String, Object>> candidates = (List<Map<String, Object>>) response.get("candidates");
+                if (!candidates.isEmpty()) {
+                    Map<String, Object> content = (Map<String, Object>) candidates.get(0).get("content");
+                    if (content != null && content.containsKey("parts")) {
+                        List<Map<String, Object>> partsList = (List<Map<String, Object>>) content.get("parts");
+                        if (!partsList.isEmpty()) {
+                            String result = (String) partsList.get(0).get("text");
+                            long elapsed = System.currentTimeMillis() - startTime;
+                            log.info("✅ Assistant response received in {}ms", elapsed);
+                            responseCache.put(cacheKey, new CachedResponse(result));
+                            return result;
+                        }
+                    }
+                }
+            }
+            return "Sorry, I couldn't generate a response. Please try again.";
+        } catch (Exception e) {
+            log.error("❌ Assistant chat failed: {}", e.getMessage());
+            return "Error: Could not reach the AI right now. Please try again in a moment.";
+        }
+    }
+
+    /**
      * Returns the cached FD rates instantly to the user.
      */
     public String analyzeFDRates(String userQuery) {

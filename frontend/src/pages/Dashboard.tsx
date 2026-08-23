@@ -270,15 +270,6 @@ export default function Dashboard() {
             </div>
           </Link>
 
-          <Link to="/architecture" style={{ textDecoration: 'none', color: 'inherit' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
-              <div style={{ background: 'rgba(139, 92, 246, 0.1)', width: '56px', height: '56px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Layers size={24} color="#8b5cf6" />
-              </div>
-              <span style={{ fontSize: '13px', fontWeight: '500' }}>Microservices<br/>Specs</span>
-            </div>
-          </Link>
-
         </div>
       </div>
 

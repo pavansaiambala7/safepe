@@ -8,7 +8,6 @@ import {
   Home,
   Brain,
   Radio,
-  Layers,
   GitFork,
   Bot
 } from 'lucide-react';
@@ -46,11 +45,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             Home
           </Link>
 
-          <Link to="/architecture" className="sidebar-link" onClick={onClose}>
-            <Layers size={24} color="#10b981" />
-            Architecture & Specs
-          </Link>
-          
           <Link to="/split" className="sidebar-link" onClick={onClose}>
             <Receipt size={24} color="#10b981" />
             Split Bills

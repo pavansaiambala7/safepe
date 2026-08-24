@@ -123,7 +123,7 @@ SafePe's fraud engine replaces static heuristics with an **autonomous multi-step
                    ▼
  ┌──────────────────────────────────┐
  │   STEP 2: RAG VECTOR SEARCH      │  Generates 768-dim embeddings via text-embedding-004.
- │   (LangGraph Agent 2)            │  Searches 1,000+ pgvector records using exact cosine similarity.
+ │   (Langchain4j step 2)            │  Searches 1,000+ pgvector records using exact cosine similarity.
  └─────────────────┬────────────────┘  Redis Vector Cache serves repeated patterns in 480ms.
                    │
                    ▼

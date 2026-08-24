@@ -82,7 +82,7 @@ public class FraudDetectionConsumer {
             // blocks the user's payment.
             if ("FLAG_VERIFICATION".equals(action)) {
                 try {
-                    String summary = buildTransactionSummary(event);
+                    String summary = buildTransactionSummary(event, riskScore, patternClassification);
                     AgenticFraudResult aiResult = agenticFraudEngine.analyzeWithAgents(
                             summary, event.getUpiId(), event.getUserId());
                     if (aiResult != null) {
@@ -252,21 +252,34 @@ public class FraudDetectionConsumer {
     }
 
     /**
-     * Turns a structured payment event into a natural-language summary so the
-     * AI engine can embed it (for RAG vector search) and reason over it.
-     * A payment isn't text on its own, so we describe it in words first.
+     * Aggregates the structured fraud signals into a natural-language summary
+     * so the AI engine can weigh them and explain its verdict. A payment isn't
+     * text on its own, so we describe the signals in words. The engine adds a
+     * velocity check and merchant lookup internally; here we pass the trust,
+     * verified-flag, amount, and the rule-based preliminary assessment.
+     *
+     * NOTE: the LLM's role here is to REASON OVER and EXPLAIN these signals,
+     * not to detect fraud from nothing — the deterministic signals do the work.
      */
-    private String buildTransactionSummary(TransactionEvent event) {
-        String trust = event.getMerchantTrustScore() != null
-                ? String.format("%.0f%%", event.getMerchantTrustScore() * 100)
-                : "unknown";
+    private String buildTransactionSummary(TransactionEvent event, int ruleScore, String rulePattern) {
+        boolean verified = event.getMerchantTrustScore() != null;
+        String trust = verified
+                ? String.format("%.0f%% (verified merchant)", event.getMerchantTrustScore() * 100)
+                : "UNKNOWN — merchant is NOT in the verified directory (treat as elevated risk)";
         return String.format(
-                "Payment of %s to merchant '%s' (UPI: %s). Merchant trust score: %s. Payment type: %s.",
+                "Evaluate this UPI payment for fraud risk based on the signals below.\n" +
+                "- Amount: %s\n" +
+                "- Merchant: %s (UPI: %s)\n" +
+                "- Merchant trust score: %s\n" +
+                "- Rule-based pattern: %s\n" +
+                "- Rule-based preliminary risk: %d/100\n" +
+                "Weigh these signals, decide a final risk level, and give a short plain-English reason.",
                 event.getAmount(),
                 event.getMerchantName() != null ? event.getMerchantName() : "Unknown merchant",
                 event.getUpiId(),
                 trust,
-                event.getType() != null ? event.getType() : "UPI");
+                rulePattern,
+                ruleScore);
     }
 
     private String classifyTransactionPattern(TransactionEvent event) {
@@ -285,7 +298,9 @@ public class FraudDetectionConsumer {
         if (event.getMerchantTrustScore() != null) {
             score += (int) ((1.0 - event.getMerchantTrustScore()) * 50);
         } else {
-            score += 25;
+            // Unknown / unverified merchant → elevated risk, pushing it into the
+            // medium band so it escalates to the LLM+RAG engine for review.
+            score += 40;
         }
         if (event.getAmount() != null) {
             double amount = event.getAmount().doubleValue();

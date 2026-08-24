@@ -4,10 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.safepe.config.KafkaConfig;
+import com.safepe.dto.AgenticFraudResult;
 import com.safepe.dto.FraudAlertEvent;
 import com.safepe.dto.NotificationEvent;
 import com.safepe.dto.TransactionEvent;
 import com.safepe.service.NotificationSSEService;
+import com.safepe.service.agent.AgenticFraudEngine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -34,12 +36,15 @@ public class FraudDetectionConsumer {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final NotificationSSEService notificationSSEService;
+    private final AgenticFraudEngine agenticFraudEngine;
     private final ObjectMapper objectMapper;
 
     public FraudDetectionConsumer(KafkaTemplate<String, String> kafkaTemplate,
-                                  NotificationSSEService notificationSSEService) {
+                                  NotificationSSEService notificationSSEService,
+                                  AgenticFraudEngine agenticFraudEngine) {
         this.kafkaTemplate = kafkaTemplate;
         this.notificationSSEService = notificationSSEService;
+        this.agenticFraudEngine = agenticFraudEngine;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.registerModule(new JavaTimeModule());
     }
@@ -60,12 +65,42 @@ public class FraudDetectionConsumer {
             log.info("Received TransactionEvent from Kafka: txn={}, amount={}, upi={}",
                     event.getTransactionId(), event.getAmount(), event.getUpiId());
 
-            // Step 1: Pattern Classification
+            // Step 1: Pattern Classification (fast, rule-based)
             String patternClassification = classifyTransactionPattern(event);
 
-            // Step 2: Risk Score Calculation
+            // Step 2: Risk Score Calculation (fast, rule-based)
             int riskScore = calculateRiskScore(event);
             String action = determineAction(riskScore);
+
+            // Step 2b: MEDIUM-RISK ESCALATION → LLM + RAG engine
+            // ------------------------------------------------------------
+            // Clear ALLOW/BLOCK cases are decided cheaply by the rules above.
+            // Only the uncertain, medium-risk transactions are escalated to the
+            // agentic AI engine (Gemini classification → RAG vector search →
+            // Gemini risk evaluation) for deeper, semantic analysis. This runs
+            // here in the async Kafka consumer, so the slow LLM call never
+            // blocks the user's payment.
+            if ("FLAG_VERIFICATION".equals(action)) {
+                try {
+                    String summary = buildTransactionSummary(event);
+                    AgenticFraudResult aiResult = agenticFraudEngine.analyzeWithAgents(
+                            summary, event.getUpiId(), event.getUserId());
+                    if (aiResult != null) {
+                        log.info("Medium-risk txn {} escalated to AI engine → rule={}%, ai={}%, action={}",
+                                event.getTransactionId(), riskScore, aiResult.getRiskScore(), aiResult.getAction());
+                        // Trust the AI engine's deeper decision
+                        riskScore = aiResult.getRiskScore();
+                        action = aiResult.getAction();
+                        if (aiResult.getSummary() != null && !aiResult.getSummary().isBlank()) {
+                            patternClassification = "AI-Escalated: " + aiResult.getSummary();
+                        }
+                    }
+                } catch (Exception aiEx) {
+                    // Graceful degradation: keep the rule-based decision if the LLM fails
+                    log.warn("AI escalation failed for txn {}, keeping rule-based decision: {}",
+                            event.getTransactionId(), aiEx.getMessage());
+                }
+            }
 
             // Step 3: Build and publish Fraud Alert to Kafka
             FraudAlertEvent alertEvent = FraudAlertEvent.builder()
@@ -214,6 +249,24 @@ public class FraudDetectionConsumer {
         } catch (Exception e) {
             log.error("Failed to push fraud notification to SSE: {}", e.getMessage());
         }
+    }
+
+    /**
+     * Turns a structured payment event into a natural-language summary so the
+     * AI engine can embed it (for RAG vector search) and reason over it.
+     * A payment isn't text on its own, so we describe it in words first.
+     */
+    private String buildTransactionSummary(TransactionEvent event) {
+        String trust = event.getMerchantTrustScore() != null
+                ? String.format("%.0f%%", event.getMerchantTrustScore() * 100)
+                : "unknown";
+        return String.format(
+                "Payment of %s to merchant '%s' (UPI: %s). Merchant trust score: %s. Payment type: %s.",
+                event.getAmount(),
+                event.getMerchantName() != null ? event.getMerchantName() : "Unknown merchant",
+                event.getUpiId(),
+                trust,
+                event.getType() != null ? event.getType() : "UPI");
     }
 
     private String classifyTransactionPattern(TransactionEvent event) {

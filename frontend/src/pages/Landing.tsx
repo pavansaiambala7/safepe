@@ -54,7 +54,7 @@ export default function Landing() {
           margin: '0 auto 36px auto',
           lineHeight: '1.6'
         }}>
-          Engineered as a <strong>5-service distributed platform</strong> with database-per-service architecture supporting <strong>550+ merchants</strong>. Powered by <strong>LangGraph Agentic AI</strong>, pgvector RAG semantic search, and real-time Kafka event streaming.
+          Engineered as a <strong>5-service distributed platform</strong> with database-per-service architecture supporting <strong>550+ merchants</strong>. Powered by <strong>LangChain4j Agentic AI</strong>, pgvector RAG semantic search, and real-time Kafka event streaming.
         </p>
         
         {/* CTA Buttons */}
@@ -101,7 +101,7 @@ export default function Landing() {
           <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #10b981' }}>
             <div style={{ fontSize: '28px', fontWeight: '800', color: '#10b981', marginBottom: '4px' }}>92%</div>
             <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>AI Fraud Accuracy</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>on 3,000+ Transactions (LangGraph)</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>on 3,000+ Transactions (LangChain4j)</div>
           </div>
 
           <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #8b5cf6' }}>
@@ -176,7 +176,7 @@ export default function Landing() {
               </div>
               <div>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#8b5cf6', textTransform: 'uppercase' }}>Service 3: AI Engine</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>LangGraph Agentic Fraud Engine</h3>
+                <h3 style={{ fontSize: '16px', margin: 0 }}>LangChain4j Agentic Fraud Engine</h3>
               </div>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>

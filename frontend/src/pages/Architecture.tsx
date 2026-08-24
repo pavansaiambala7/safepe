@@ -59,7 +59,7 @@ export default function Architecture() {
     {
       id: 3,
       name: 'Service 3: Agentic AI Fraud Engine',
-      tech: 'LangGraph / LangChain4j + Gemini AI',
+      tech: 'LangChain4j + Gemini AI',
       icon: <Cpu size={28} color="#8b5cf6" />,
       tag: 'AI REASONING',
       color: '#8b5cf6',
@@ -148,7 +148,7 @@ export default function Architecture() {
           SafePe Architecture & Live Benchmarks
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: 16, maxWidth: 700, margin: '0 auto', lineHeight: 1.6 }}>
-          Database-per-service distributed architecture supporting <strong>550+ merchants</strong> at <strong>99.5% uptime</strong> with LangGraph Agentic AI fraud reasoning.
+          Database-per-service distributed architecture supporting <strong>550+ merchants</strong> at <strong>99.5% uptime</strong> with LangChain4j Agentic AI fraud reasoning.
         </p>
       </div>
 
@@ -384,10 +384,10 @@ export default function Architecture() {
         )}
       </div>
 
-      {/* Multi-Step LangGraph Agentic AI Reasoning Chain */}
+      {/* Multi-Step LangChain4j Agentic AI Reasoning Chain */}
       <div className="surface-panel" style={{ padding: 28, marginBottom: 36 }}>
         <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 8 }}>
-          🤖 LangGraph Multi-Step Reasoning Agent Pipeline
+          🤖 LangChain4j Multi-Step Reasoning Pipeline
         </h3>
         <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 24 }}>
           How SafePe achieves <strong>92% detection accuracy</strong> on 3,000+ transactions through autonomous agents

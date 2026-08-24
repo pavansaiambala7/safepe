@@ -105,16 +105,16 @@ export default function Architecture() {
       icon: <Database size={28} color="#f59e0b" />,
       tag: 'STORAGE & SECURITY',
       color: '#f59e0b',
-      description: 'Database-per-service persistence layer combining relational data, 1,000+ HNSW vector embeddings, Redis vector caching, and AES-256 encryption.',
+      description: 'Database-per-service persistence layer combining relational data, 1,000+ pgvector embeddings, Redis vector caching, and AES-256 encryption.',
       responsibilities: [
-        'pgvector HNSW index for sub-linear cosine similarity queries',
+        'pgvector embeddings with exact cosine similarity search',
         'Redis Vector Cache cutting AI search latency from 800ms → 480ms',
         'AES-256 GCM vault encrypting bank accounts and card numbers',
         '1,000+ user credentials secured with zero plaintext leakage'
       ],
       metrics: {
         'Vector Cache Latency': '480ms (vs 800ms uncached)',
-        'Vector Index': 'HNSW Cosine Distance',
+        'Vector Search': 'Cosine Distance',
         'Vault Security': 'AES-256 GCM',
         'Secured Accounts': '1,000+ Accounts'
       }
@@ -357,7 +357,7 @@ export default function Architecture() {
               <div style={{ width: '100%', height: '100%', background: '#ef4444', borderRadius: 6 }} />
             </div>
             <p style={{ fontSize: 11, color: '#64748b', marginTop: 8 }}>
-              Full model embedding generation + pgvector HNSW disk index scan
+              Full model embedding generation + pgvector cosine similarity scan
             </p>
           </div>
 

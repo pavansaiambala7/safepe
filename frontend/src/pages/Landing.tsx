@@ -212,7 +212,7 @@ export default function Landing() {
               </div>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              HNSW vector index for 1,000+ fraud patterns, Redis cache cutting latency from 800ms → 480ms, and AES-256 GCM encrypted field vault.
+              Exact cosine similarity search over 1,000+ fraud patterns, Redis cache cutting latency from 800ms → 480ms, and AES-256 GCM encrypted field vault.
             </p>
           </div>
 

@@ -9,7 +9,7 @@
   [![React](https://img.shields.io/badge/Frontend-React_18-61DAFB?style=for-the-badge&logo=react)](https://reactjs.org/)
   [![Spring Boot](https://img.shields.io/badge/Backend-Spring_Boot_3.2-6DB33F?style=for-the-badge&logo=spring)](https://spring.io/)
   [![PostgreSQL](https://img.shields.io/badge/Database-PostgreSQL_15-4169E1?style=for-the-badge&logo=postgresql)](https://postgresql.org/)
-  [![pgvector](https://img.shields.io/badge/Vector_DB-pgvector_HNSW-336791?style=for-the-badge&logo=postgresql)](https://github.com/pgvector/pgvector)
+  [![pgvector](https://img.shields.io/badge/Vector_DB-pgvector_Cosine-336791?style=for-the-badge&logo=postgresql)](https://github.com/pgvector/pgvector)
   [![Redis](https://img.shields.io/badge/Vector_Cache-Redis_7-DC382D?style=for-the-badge&logo=redis)](https://redis.io/)
   [![Kafka](https://img.shields.io/badge/Events-Apache_Kafka_KRaft-231F20?style=for-the-badge&logo=apachekafka)](https://kafka.apache.org/)
   [![LangGraph](https://img.shields.io/badge/Agents-LangGraph_/_LangChain4j-FF6F00?style=for-the-badge)](https://docs.langchain4j.dev/)
@@ -44,7 +44,7 @@
 | **Merchant Capacity** | Multi-merchant routing & trust scores | **550+ Active Merchants** |
 | **Platform Reliability** | High availability SLA | **99.5% Uptime** |
 | **AI Fraud Detection Accuracy** | Evaluated on live & synthetic test sets | **92% Accuracy (3,000+ txns)** |
-| **RAG Semantic Search Latency** | pgvector HNSW disk index scan (uncached) | 800 ms |
+| **RAG Semantic Search Latency** | pgvector cosine similarity scan (uncached) | 800 ms |
 | **Redis Cached AI Latency** | Redis 7 in-memory vector cache | **480 ms (40% faster)** |
 | **Account Vault Security** | Field-level symmetric encryption | **1,000+ Accounts (AES-256 GCM)** |
 | **Payment Webhook Processing** | Razorpay automated signature verification | **200+ Transactions** |
@@ -82,7 +82,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
                                                                       ▼
                                                  ┌─────────────────────────────────────────┐
                                                  │   Service 5: Vector DB & Data Vault     │
-                                                 │   PostgreSQL 15 + pgvector (HNSW)       │
+                                                 │   PostgreSQL 15 + pgvector (Cosine)     │
                                                  │   Redis 7 Vector Cache (480ms latency)  │
                                                  │   AES-256 Cryptographic Vault           │
                                                  └─────────────────────────────────────────┘
@@ -106,7 +106,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
 
 ### 5. Vector DB, Storage & Vault Service
 - **Tech:** PostgreSQL 15, pgvector extension, Redis 7 Alpine, BouncyCastle AES-256 GCM
-- **Key Features:** HNSW cosine similarity index across 1,000+ fraud patterns, Redis in-memory vector cache reducing latency to 480ms, and cryptographic vault securing 1,000+ accounts.
+- **Key Features:** Exact cosine similarity search across 1,000+ fraud patterns, Redis in-memory vector cache reducing latency to 480ms, and cryptographic vault securing 1,000+ accounts.
 
 ---
 
@@ -123,7 +123,7 @@ SafePe's fraud engine replaces static heuristics with an **autonomous multi-step
                    ▼
  ┌──────────────────────────────────┐
  │   STEP 2: RAG VECTOR SEARCH      │  Generates 768-dim embeddings via text-embedding-004.
- │   (LangGraph Agent 2)            │  Searches 1,000+ pgvector records using HNSW cosine similarity.
+ │   (LangGraph Agent 2)            │  Searches 1,000+ pgvector records using exact cosine similarity.
  └─────────────────┬────────────────┘  Redis Vector Cache serves repeated patterns in 480ms.
                    │
                    ▼
@@ -140,7 +140,7 @@ SafePe's fraud engine replaces static heuristics with an **autonomous multi-step
 | Pipeline Stage | Implementation Detail | Performance |
 |:---|:---|:---|
 | **Embedding Generation** | Google Gemini `text-embedding-004` (768 dimensions) | ~200ms |
-| **Vector Search (Uncached)** | pgvector HNSW index cosine distance scan over 1,000+ records | **800ms total** |
+| **Vector Search (Uncached)** | pgvector cosine distance scan over 1,000+ records | **800ms total** |
 | **Vector Search (Redis Cached)** | In-memory key-value vector cache keyed on normalized text hash | **480ms total (-40%)** |
 | **Fallback Mechanism** | Relational SQL keyword trigram fallback on embedding failure | <50ms |
 
@@ -165,7 +165,7 @@ The emerald green notification bell in the top navigation bar gives instant visu
 Frontend:          React 18 • TypeScript • Vite • Lucide Icons • Web Audio API
 Backend:           Java 17 • Spring Boot 3.2 • Spring Security • Spring Data JPA
 AI & Reasoning:    LangGraph • LangChain4j • Google Gemini AI • text-embedding-004
-Persistence:       PostgreSQL 15 • pgvector (HNSW Indexing) • Redis 7 (Alpine)
+Persistence:       PostgreSQL 15 • pgvector (Cosine Similarity) • Redis 7 (Alpine)
 Event Streaming:   Apache Kafka 3.7 (KRaft Consensus Mode)
 Payment Gateway:   Razorpay API & Webhook Engine (200+ Processed)
 Authentication:    Clerk JWT with JWKS Public Key Validation (RS256)

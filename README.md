@@ -71,7 +71,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
                          │   Razorpay Webhooks • Rate Limiting     │
                          └──────────────┬──────────────────┬───────┘
                                         │                  │
-                transaction-events topic│                  │ REST / gRPC
+                transaction-events topic│                  │ REST (HTTP/JSON)
                                         ▼                  ▼
 ┌─────────────────────────────────────────┐      ┌─────────────────────────────────────────┐
 │   Service 4: Event-Driven Kafka Bus     │◀─────│   Service 3: Agentic AI Fraud Engine    │

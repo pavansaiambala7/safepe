@@ -110,14 +110,14 @@ SafePe employs a distributed microservices pattern where each service owns its p
 
 ---
 
-## 🤖 Agentic AI Fraud Detection Engine (LangGraph)
+## 🤖 Agentic AI Fraud Detection Engine (Langchain4j)
 
 SafePe's fraud engine replaces static heuristics with an **autonomous multi-step reasoning graph**:
 
 ```
  ┌──────────────────────────────────┐
  │   STEP 1: PATTERN CLASSIFIER     │  Zero-shot classification via Gemini AI across 9 threat classes:
- │   (LangGraph Agent 1)            │  PHISHING, UPI_FRAUD, LOAN_SCAM, KYC_FRAUD, LOTTERY_SCAM,
+ │   (Langchain4j step  1)            │  PHISHING, UPI_FRAUD, LOAN_SCAM, KYC_FRAUD, LOTTERY_SCAM,
  └─────────────────┬────────────────┘  INVESTMENT_FRAUD, IMPERSONATION, VISHING, LEGITIMATE.
                    │
                    ▼

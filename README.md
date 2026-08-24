@@ -75,7 +75,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
                                         ▼                  ▼
 ┌─────────────────────────────────────────┐      ┌─────────────────────────────────────────┐
 │   Service 4: Event-Driven Kafka Bus     │◀─────│   Service 3: Agentic AI Fraud Engine    │
-│   Apache Kafka 3.7 (KRaft Mode)         │      │   LangGraph / LangChain4j + Gemini AI   │
+│   Apache Kafka 3.7 (KRaft Mode)         │      │    LangChain4j + Gemini AI   │
 │   Topics: transaction-events, alerts    │─────▶│   92% Accuracy on 3,000+ Txns           │
 └─────────────────────────────────────────┘      └────────────────────┬────────────────────┘
                                                                       │

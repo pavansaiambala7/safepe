@@ -5,6 +5,7 @@ import com.safepe.repository.MerchantRepository;
 import com.safepe.repository.TransactionRepository;
 import com.safepe.service.rag.VectorSearchService;
 import com.safepe.service.rag.VectorSearchService.VectorSearchResult;
+import dev.langchain4j.agent.tool.Tool;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,6 +41,7 @@ public class FraudAnalysisTools {
      * @param message The suspicious message or transaction description
      * @return Formatted string of matched fraud patterns with similarity scores
      */
+    @Tool("Search known fraud patterns using semantic vector (cosine) similarity")
     public String searchFraudPatterns(String message) {
         log.info("🔍 [Tool] Searching fraud patterns for: '{}'", 
                 message.substring(0, Math.min(80, message.length())));
@@ -67,6 +69,7 @@ public class FraudAnalysisTools {
      * @param upiId The UPI ID to look up
      * @return Merchant trust assessment string
      */
+    @Tool("Look up a merchant's trust score, verification status and fraud flags by UPI ID")
     public String checkMerchantTrustScore(String upiId) {
         log.info("🏪 [Tool] Checking merchant trust score for UPI: {}", upiId);
 
@@ -90,6 +93,7 @@ public class FraudAnalysisTools {
      * @param userId The user ID to analyze
      * @return Transaction velocity assessment
      */
+    @Tool("Analyze a user's recent transaction velocity to detect rapid-fire fraud")
     public String analyzeTransactionVelocity(String userId) {
         log.info("⏱️ [Tool] Analyzing transaction velocity for user: {}", userId);
 

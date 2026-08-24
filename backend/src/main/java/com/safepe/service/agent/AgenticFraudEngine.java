@@ -3,8 +3,8 @@ package com.safepe.service.agent;
 import com.safepe.dto.AgenticFraudResult;
 import com.safepe.dto.AgenticFraudResult.MatchedPattern;
 import com.safepe.dto.AgenticFraudResult.ReasoningStep;
-import com.safepe.service.GeminiAIService;
 import com.safepe.service.rag.VectorSearchService.VectorSearchResult;
+import dev.langchain4j.model.chat.ChatLanguageModel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +40,9 @@ import java.util.stream.Collectors;
 public class AgenticFraudEngine {
 
     private final FraudAnalysisTools fraudAnalysisTools;
-    private final GeminiAIService geminiAIService;
+
+    /** LangChain4j chat model (Google Gemini) — drives Steps 1 & 3 of the pipeline. */
+    private final ChatLanguageModel geminiChatModel;
 
     /**
      * Runs the full 3-step agentic fraud analysis pipeline.
@@ -69,7 +71,7 @@ public class AgenticFraudEngine {
                 "IMPERSONATION, VISHING, or LEGITIMATE. " +
                 "Respond with ONLY the category name and a one-line reason. " +
                 "Message: \"" + message + "\"";
-            classificationResult = geminiAIService.analyzeMessageForFraud(classificationPrompt);
+            classificationResult = geminiChatModel.generate(classificationPrompt);
         } catch (Exception e) {
             classificationResult = "UNKNOWN — Classification failed: " + e.getMessage();
         }
@@ -161,7 +163,7 @@ public class AgenticFraudEngine {
                 classificationResult, ragResult, merchantResult, velocityResult, message
             );
 
-            String aiResponse = geminiAIService.analyzeMessageForFraud(evaluationPrompt);
+            String aiResponse = geminiChatModel.generate(evaluationPrompt);
             
             // Parse the AI response
             riskScore = parseRiskScore(aiResponse);

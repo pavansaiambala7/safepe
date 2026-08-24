@@ -1,0 +1,30 @@
+package com.safepe.config;
+
+import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+/**
+ * LangChain4j Configuration — Agentic AI Framework Initialization
+ * ===============================================================
+ * Initializes the LangChain4j ChatLanguageModel backed by Google
+ * Gemini (via the langchain4j-google-ai-gemini integration module).
+ * Injected into the AgenticFraudEngine so the multi-step fraud
+ * reasoning pipeline runs through the LangChain4j framework.
+ */
+@Configuration
+public class LangChain4jConfig {
+
+    @Bean
+    public ChatLanguageModel geminiChatModel(
+            @Value("${safepe.gemini.api-key}") String apiKey,
+            @Value("${safepe.gemini.model}") String modelName) {
+        return GoogleAiGeminiChatModel.builder()
+                .apiKey(apiKey)
+                .modelName(modelName)
+                .temperature(0.2)
+                .build();
+    }
+}

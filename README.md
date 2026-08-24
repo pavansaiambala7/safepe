@@ -97,7 +97,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
 - **Key Features:** Token-bucket IP rate limiting, 550+ merchant trust score directory, Razorpay order generation, and automated webhook verification for 200+ payments.
 
 ### 3. Agentic AI Fraud Reasoning Service
-- **Tech:** LangGraph, LangChain4j, Google Gemini AI (Gemini 1.5 Flash / Pro)
+- **Tech:** LangChain4j, Google Gemini AI (Gemini 1.5 Flash / Pro)
 - **Key Features:** Autonomous 3-agent multi-step chain (Pattern Classifier ➔ RAG pgvector Search ➔ Risk Evaluator) generating structured reasoning traces and triggering automated escrow blocks.
 
 ### 4. Event Bus Service
@@ -129,7 +129,7 @@ SafePe's fraud engine replaces static heuristics with an **autonomous multi-step
                    ▼
  ┌──────────────────────────────────┐
  │   STEP 3: RISK EVALUATOR         │  Synthesizes Agent 1 + Agent 2 outputs + merchant trust score.
- │   (LangGraph Agent 3)            │  Decides action: ALLOW / FLAG_VERIFICATION / BLOCK.
+ │   (Langchain4j step 3)            │  Decides action: ALLOW / FLAG_VERIFICATION / BLOCK.
  └─────────────────┬────────────────┘  Triggers automated Razorpay Escrow freeze & Bell sound alert.
 ```
 
@@ -164,7 +164,7 @@ The emerald green notification bell in the top navigation bar gives instant visu
 ```
 Frontend:          React 18 • TypeScript • Vite • Lucide Icons • Web Audio API
 Backend:           Java 17 • Spring Boot 3.2 • Spring Security • Spring Data JPA
-AI & Reasoning:    LangGraph • LangChain4j • Google Gemini AI • text-embedding-004
+AI & Reasoning:    LangChain4j • Google Gemini AI • text-embedding-004
 Persistence:       PostgreSQL 15 • pgvector (Cosine Similarity) • Redis 7 (Alpine)
 Event Streaming:   Apache Kafka 3.7 (KRaft Consensus Mode)
 Payment Gateway:   Razorpay API & Webhook Engine (200+ Processed)

@@ -5,7 +5,7 @@
   <p><strong>Enterprise Event-Driven Financial Safety & Real-Time Payments Platform</strong></p>
   <p><em>Powered by Spring Cloud Microservices, Apache Kafka, Netflix Eureka, and Agentic AI RAG Engine</em></p>
 
-  [![Live Platform](https://img.shields.io/badge/🚀_Live_Platform-SafePe_v2.0-10b981?style=for-the-badge&logo=react)](http://13.60.235.28:3000)
+  [![Live Demo](https://img.shields.io/badge/🚀_Live_Demo-http%3A%2F%2F13.60.235.28%3A3000%2F-10b981?style=for-the-badge&logo=react)](http://13.60.235.28:3000/)
   [![GitHub](https://img.shields.io/badge/GitHub-pavansaiambala7-181717?style=for-the-badge&logo=github)](https://github.com/pavansaiambala7)
   [![Spring Cloud](https://img.shields.io/badge/Spring_Cloud-2023.0.1-6DB33F?style=for-the-badge&logo=spring)](https://spring.io/projects/spring-cloud)
   [![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.2.5-6DB33F?style=for-the-badge&logo=springboot)](https://spring.io/projects/spring-boot)
@@ -16,6 +16,7 @@
   [![LangChain4j](https://img.shields.io/badge/Agentic_AI-LangChain4j_Gemini-FF6F00?style=for-the-badge)](https://docs.langchain4j.dev/)
 
   <p align="center">
+    <a href="#-live-demo">🚀 Live Demo</a> •
     <a href="#-architectural-topology--event-mesh">Architecture Flow</a> •
     <a href="#-microservices-ecosystem">Microservices</a> •
     <a href="#-agentic-ai-investigation-engine">AI Investigation</a> •
@@ -24,6 +25,15 @@
     <a href="#-quick-start--docker-compose">Deployment</a>
   </p>
 </div>
+
+---
+
+## 🌐 Live Demo
+
+> **🚀 Explore SafePe Live in Production:**  
+> 👉 **[http://13.60.235.28:3000/](http://13.60.235.28:3000/)**  
+>
+> Experience the complete financial safety suite with real-time PhonePe-style payments, Agentic AI fraud forensics, simulated escrow clawback, and live Web Audio chime alerts.
 
 ---
 

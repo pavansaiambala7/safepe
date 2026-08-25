@@ -1,0 +1,95 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+
+  cloud:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+          lower-case-service-id: true
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"
+              - "http://localhost:5173"
+              - "http://127.0.0.1:3000"
+              - "http://127.0.0.1:5173"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+              - PATCH
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        # ── 1. Payment Service Routes ─────────────────────────────────────────
+        - id: payment-service-payments
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/payments/**
+        - id: payment-service-bank
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/bank/**
+        - id: payment-service-utilities
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/utilities/**
+        - id: payment-service-vault
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/vault/**
+        - id: payment-service-history
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/history/**
+
+        # ── 2. Fraud Service Routes ───────────────────────────────────────────
+        - id: fraud-service-fraud
+          uri: lb://fraud-service
+          predicates:
+            - Path=/api/v1/fraud/**
+        - id: fraud-service-assistant
+          uri: lb://fraud-service
+          predicates:
+            - Path=/api/v1/assistant/**
+
+        # ── 3. Notification Service Routes (SSE) ─────────────────────────────
+        - id: notification-service-sse
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/v1/public/notifications/**
+
+        # ── 4. Audit Service Routes (Compliance & Forensics) ─────────────────
+        - id: audit-service-audit
+          uri: lb://audit-service
+          predicates:
+            - Path=/api/v1/audit/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_SERVER_URL:http://localhost:8761/eureka/}
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# ── SafePe Custom Configuration ─────────────────────────────────────────────
+safepe:
+  clerk:
+    issuer: ${CLERK_ISSUER:https://creative-muskox-36.clerk.accounts.dev}
+    jwks-url: ${CLERK_JWKS_URL:https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,gateway

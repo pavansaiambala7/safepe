@@ -1,0 +1,22 @@
+package com.safepe.audit.config;
+
+import org.apache.kafka.clients.admin.NewTopic;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.config.TopicBuilder;
+
+@Configuration
+public class KafkaConfig {
+
+    public static final String TRANSACTION_EVENTS_TOPIC = "transaction-events";
+    public static final String AUDIT_EVENTS_TOPIC = "audit-events";
+    public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts";
+
+    @Bean
+    public NewTopic auditEventsTopic() {
+        return TopicBuilder.name(AUDIT_EVENTS_TOPIC)
+                .partitions(3)
+                .replicas(1)
+                .build();
+    }
+}

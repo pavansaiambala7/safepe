@@ -6,6 +6,7 @@ target/
 *.ear
 *.log
 .mvn/wrapper/maven-wrapper.jar
+.tools/
 
 # === IDE ===
 .idea/

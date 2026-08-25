@@ -51,64 +51,22 @@
 | **Event-Driven Messaging** | Apache Kafka KRaft mode | 10,000+ msg/sec throughput |
 | **Notification Audio Synthesis** | Web Audio API harmonic chimes | <15 ms audio latency |
 
----
+## 🏗️ Microservices Architecture (Spring Cloud)
 
-## 🏗️ 5-Service Distributed Microservices Architecture
+SafePe uses Netflix Eureka for service discovery, Spring Cloud Gateway as the
+API gateway, and Apache Kafka as the event bus. Services:
 
-SafePe employs a distributed microservices pattern where each service owns its persistence model and communicates asynchronously via Kafka or synchronously via authenticated REST APIs.
+| Service | Port | Role |
+|:---|:---|:---|
+| Eureka Server | 8761 | Service registry |
+| API Gateway | 8080 | Routing, JWT auth, rate limiting |
+| Payment Service | 8081 | Razorpay; publishes transaction-events |
+| Fraud/AI Service | 8082 | LangChain4j + Gemini, RAG over pgvector |
+| Notification Service | 8083 | Real-time fraud alerts via SSE |
 
-```
-                         ┌─────────────────────────────────────────┐
-                         │   Service 1: Presentation Layer         │
-                         │   React 18 + Vite + TypeScript          │
-                         │   Emerald Bell Center + Audio Chimes    │
-                         └───────────────────┬─────────────────────┘
-                                             │ Clerk JWT (RS256)
-                                             ▼
-                         ┌─────────────────────────────────────────┐
-                         │   Service 2: Core engine(backend)  │
-                         │   Spring Boot 3.2 + Java 17             │
-                         │   Razorpay Webhooks • Rate Limiting     │
-                         └──────────────┬──────────────────┬───────┘
-                                        │                  │
-                transaction-events topic│                  │ REST (HTTP/JSON)
-                                        ▼                  ▼
-┌─────────────────────────────────────────┐      ┌─────────────────────────────────────────┐
-│   Service 4: Event-Driven Kafka Bus     │◀─────│   Service 3: Agentic AI Fraud Engine    │
-│   Apache Kafka 3.7 (KRaft Mode)         │      │   LangChain4j + Gemini AI               │
-│   Topics: transaction-events, alerts    │─────▶│   92% Accuracy on 3,000+ Txns           │
-└─────────────────────────────────────────┘      └────────────────────┬────────────────────┘
-                                                                      │
-                                                                      ▼
-                                                 ┌─────────────────────────────────────────┐
-                                                 │   Service 5: Vector DB & Data Vault     │
-                                                 │   PostgreSQL 15 + pgvector (Cosine)     │
-                                                 │   Redis 7 Vector Cache (480ms latency)  │
-                                                 │   AES-256 Cryptographic Vault           │
-                                                 └─────────────────────────────────────────┘
+Async via Kafka; service-to-service via OpenFeign; resilience via Resilience4j.
 ```
 
-### 1. Presentation Service (`frontend`)
-- **Tech:** React 18, Vite, TypeScript, Lucide Icons, Vanilla CSS Design System
-- **Key Features:** Emerald green sound notification bell with audio synthesis engine, NPCI standard UPI PIN modals, dynamic QR code generation & camera scanner, interactive Kafka event stream visualizer.
-
-### 2. API Gateway & Business Service (`backend`)
-- **Tech:** Spring Boot 3.2, Java 17, Spring Security 6, Jackson
-- **Key Features:** Token-bucket IP rate limiting, 550+ merchant trust score directory, Razorpay order generation, and automated webhook verification for 200+ payments.
-
-### 3. Agentic AI Fraud Reasoning Service
-- **Tech:** LangChain4j, Google Gemini AI (Gemini 1.5 Flash / Pro)
-- **Key Features:** Autonomous 3-agent multi-step chain (Pattern Classifier ➔ RAG pgvector Search ➔ Risk Evaluator) generating structured reasoning traces and triggering automated escrow blocks.
-
-### 4. Event Bus Service
-- **Tech:** Apache Kafka 3.7 in KRaft mode (no ZooKeeper dependency)
-- **Key Features:** `transaction-events` (3 partitions) and `fraud-alerts` (3 partitions) topics decoupling real-time payment settlement from heavy AI reasoning.
-
-### 5. Vector DB, Storage & Vault Service
-- **Tech:** PostgreSQL 15, pgvector extension, Redis 7 Alpine, BouncyCastle AES-256 GCM
-- **Key Features:** Exact cosine similarity search across 1,000+ fraud patterns, Redis in-memory vector cache reducing latency to 480ms, and cryptographic vault securing 1,000+ accounts.
-
----
 
 ## 🤖 Agentic AI Fraud Detection Engine (LangChain4j)
 

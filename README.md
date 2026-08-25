@@ -66,7 +66,7 @@ SafePe employs a distributed microservices pattern where each service owns its p
                                              │ Clerk JWT (RS256)
                                              ▼
                          ┌─────────────────────────────────────────┐
-                         │   Service 2: API Gateway & Core Engine  │
+                         │   Service 2: Core engine(backend)  │
                          │   Spring Boot 3.2 + Java 17             │
                          │   Razorpay Webhooks • Rate Limiting     │
                          └──────────────┬──────────────────┬───────┘

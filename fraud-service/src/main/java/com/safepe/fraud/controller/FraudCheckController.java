@@ -1,9 +1,7 @@
 package com.safepe.fraud.controller;
 
 import com.safepe.fraud.dto.AgenticFraudResult;
-import com.safepe.fraud.dto.FraudCheckRequest;
 import com.safepe.fraud.dto.ScamSMSRequest;
-import com.safepe.fraud.service.FraudDetectionService;
 import com.safepe.fraud.service.GeminiAIService;
 import com.safepe.fraud.service.agent.AgenticFraudEngine;
 import com.safepe.fraud.service.rag.VectorSearchService;
@@ -20,16 +18,9 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class FraudCheckController {
 
-    private final FraudDetectionService fraudDetectionService;
     private final GeminiAIService geminiAIService;
     private final AgenticFraudEngine agenticFraudEngine;
     private final VectorSearchService vectorSearchService;
-
-    @PostMapping("/check")
-    public ResponseEntity<?> checkMerchant(@RequestBody FraudCheckRequest request) {
-        Map<String, Object> response = fraudDetectionService.checkUpiFraudRisk(request.upiId());
-        return ResponseEntity.ok(response);
-    }
 
     @PostMapping("/analyze-sms")
     public ResponseEntity<?> analyzeScamSMS(@RequestBody ScamSMSRequest request) {
@@ -65,10 +56,5 @@ public class FraudCheckController {
 
         List<VectorSearchResult> results = vectorSearchService.searchSimilarPatterns(query);
         return ResponseEntity.ok(results);
-    }
-
-    @GetMapping("/search")
-    public ResponseEntity<?> searchMerchants(@RequestParam String query) {
-        return ResponseEntity.ok(fraudDetectionService.checkUpiFraudRisk(query));
     }
 }

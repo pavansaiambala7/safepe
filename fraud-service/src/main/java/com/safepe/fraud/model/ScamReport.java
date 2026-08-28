@@ -22,10 +22,8 @@ public class ScamReport {
     @Column(name = "reporter_id", nullable = false)
     private String reporterId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "merchant_id")
-    @ToString.Exclude
-    private Merchant merchant;
+    @Column(name = "reported_upi", length = 255)
+    private String reportedUpi;
 
     @Column(name = "scam_type", length = 50)
     private String scamType;

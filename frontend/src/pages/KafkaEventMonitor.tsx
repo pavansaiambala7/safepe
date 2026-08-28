@@ -81,7 +81,6 @@ export default function KafkaEventMonitor() {
               matchedPatternDescription: 'Kafka event-driven consumer intercepted transaction before bank nodal settlement.',
               merchantName: 'Suspicious Fake Merchant',
               merchantUpi: 'suspicious.merchant@upi',
-              merchantTrustScore: 0.1,
               reportedCount: 15,
               action: 'BLOCK',
               refundId: `rzp_rfnd_${Date.now().toString().slice(-7)}`,

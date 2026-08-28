@@ -1,7 +1,5 @@
 package com.safepe.fraud.service.agent;
 
-import com.safepe.fraud.model.Merchant;
-import com.safepe.fraud.repository.MerchantRepository;
 import com.safepe.fraud.repository.TransactionRepository;
 import com.safepe.fraud.service.rag.VectorSearchService;
 import com.safepe.fraud.service.rag.VectorSearchService.VectorSearchResult;
@@ -11,7 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -19,7 +16,6 @@ import java.util.Optional;
 public class FraudAnalysisTools {
 
     private final VectorSearchService vectorSearchService;
-    private final MerchantRepository merchantRepository;
     private final TransactionRepository transactionRepository;
 
     @Tool("Search known fraud patterns using semantic vector (cosine) similarity")
@@ -44,21 +40,10 @@ public class FraudAnalysisTools {
         return sb.toString();
     }
 
-    @Tool("Look up a merchant's trust score, verification status and fraud flags by UPI ID")
+    @Tool("Look up a merchant's verification status by UPI ID")
     public String checkMerchantTrustScore(String upiId) {
-        log.info("🏪 [Tool] Checking merchant trust score for UPI: {}", upiId);
-
-        Optional<Merchant> merchantOpt = merchantRepository.findByUpiIdMasked(upiId);
-        if (merchantOpt.isPresent()) {
-            Merchant m = merchantOpt.get();
-            return String.format("Merchant Found: '%s' | Trust Score: %.0f%% | Verified: %s | Flagged: %s | Reports: %d",
-                    m.getName(),
-                    m.getTrustScore() * 100,
-                    m.getIsVerified() ? "YES" : "NO",
-                    m.getIsFlagged() ? "⚠️ YES" : "NO",
-                    m.getReportCount());
-        }
-        return "Merchant NOT FOUND in database. This UPI ID is unverified — treat with caution.";
+        log.info("🏪 [Tool] Merchant directory lookup for UPI: {}", upiId);
+        return "Merchant directory is not available. This UPI ID cannot be verified through the merchant database — treat with standard caution.";
     }
 
     @Tool("Analyze a user's recent transaction velocity to detect rapid-fire fraud")

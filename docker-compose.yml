@@ -165,30 +165,6 @@ services:
       eureka-server:
         condition: service_started
 
-  # ── Audit Service (:8084) ─────────────────────────────────────────────────
-  audit-service:
-    build:
-      context: ./audit-service
-      dockerfile: Dockerfile
-    container_name: safepe-audit-service
-    ports:
-      - "8084:8084"
-    environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
-      - SPRING_DATASOURCE_USERNAME=safepe_user
-      - SPRING_DATASOURCE_PASSWORD=safepe_password
-      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
-      - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
-      - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
-      - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-    depends_on:
-      db:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-      eureka-server:
-        condition: service_started
-
   # ── Layer 1: Presentation (React Frontend) ────────────────────────────────
   frontend:
     build:

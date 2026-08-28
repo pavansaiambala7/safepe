@@ -89,7 +89,7 @@ export default function Dashboard() {
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '4px 0 0 0' }}>
-                550+ Merchants • LangChain4j Agentic AI (92% Accuracy) • 480ms Redis Vector Latency • Kafka KRaft Bus
+                3 AI Features • LangChain4j Agentic AI (92% Accuracy) • 480ms Redis Vector Latency • Kafka KRaft Bus
               </p>
             </div>
           </div>

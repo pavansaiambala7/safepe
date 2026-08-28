@@ -620,10 +620,6 @@ export default function NotificationBell() {
                                   <span style={{ color: 'var(--color-text-secondary)' }}>RAG Vector Pattern Match:</span>
                                   <strong style={{ color: '#8b5cf6' }}>{n.fraudDetails.similarityMatch}% Cosine Match</strong>
                                 </div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                                  <span style={{ color: 'var(--color-text-secondary)' }}>Merchant Trust Score:</span>
-                                  <strong style={{ color: '#ef4444' }}>{n.fraudDetails.merchantTrustScore * 100}% (Reported by {n.fraudDetails.reportedCount} users)</strong>
-                                </div>
                                 {n.fraudDetails.refundId && (
                                   <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px dashed var(--color-border)', paddingTop: 4 }}>
                                     <span style={{ color: 'var(--color-text-secondary)' }}>Razorpay Escrow Refund ID:</span>

@@ -17,6 +17,5 @@
         <module>payment-service</module>
         <module>fraud-service</module>
         <module>notification-service</module>
-        <module>audit-service</module>
     </modules>
 </project>

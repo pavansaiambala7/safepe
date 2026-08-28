@@ -22,7 +22,5 @@ public class TransactionEvent implements Serializable {
     private String currency;
     private String type;
     private String razorpayOrderId;
-    private String merchantName;
-    private Double merchantTrustScore;
     private LocalDateTime timestamp;
 }

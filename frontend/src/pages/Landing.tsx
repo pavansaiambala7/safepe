@@ -54,7 +54,7 @@ export default function Landing() {
           margin: '0 auto 36px auto',
           lineHeight: '1.6'
         }}>
-          Engineered as a <strong>5-service distributed platform</strong> with database-per-service architecture supporting <strong>550+ merchants</strong>. Powered by <strong>LangChain4j Agentic AI</strong>, pgvector RAG semantic search, and real-time Kafka event streaming.
+          Engineered as a <strong>5-service distributed platform</strong> with event-driven architecture. Features <strong>Money Assistant RAG</strong>, <strong>Spending Insights AI</strong>, and <strong>SMS Scam Scanner</strong>. Powered by <strong>LangChain4j Agentic AI</strong>, pgvector RAG semantic search, and real-time Kafka event streaming.
         </p>
         
         {/* CTA Buttons */}
@@ -111,9 +111,9 @@ export default function Landing() {
           </div>
 
           <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #3b82f6' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: '#3b82f6', marginBottom: '4px' }}>550+</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>Supported Merchants</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>99.5% Platform SLA Uptime</div>
+            <div style={{ fontSize: '28px', fontWeight: '800', color: '#3b82f6', marginBottom: '4px' }}>3</div>
+            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>AI Features</div>
+            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Money Assistant • Insights • Scam Scanner</div>
           </div>
 
           <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #f59e0b' }}>
@@ -164,7 +164,7 @@ export default function Landing() {
               </div>
             </div>
             <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Handles 200+ Razorpay webhook events, IP token-bucket rate limiting, 550+ merchant trust directories, and Kafka publishing.
+              Handles 200+ Razorpay webhook events, IP token-bucket rate limiting, Clerk JWT auth, and Kafka event publishing.
             </p>
           </div>
 

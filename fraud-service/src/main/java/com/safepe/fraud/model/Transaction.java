@@ -19,16 +19,14 @@ import java.util.UUID;
 public class Transaction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     @Column(name = "id", updatable = false, nullable = false)
     private UUID id;
 
     @Column(name = "user_id", length = 255, nullable = false)
     private String userId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "merchant_id")
-    private Merchant merchant;
+    @Column(name = "payee_upi", length = 255)
+    private String payeeUpi;
 
     @Column(name = "amount", precision = 12, scale = 2, nullable = false)
     private BigDecimal amount;
@@ -46,16 +44,6 @@ public class Transaction {
 
     @Column(name = "razorpay_order_id", length = 100)
     private String razorpayOrderId;
-
-    @Column(name = "razorpay_payment_id", length = 100)
-    private String razorpayPaymentId;
-
-    @Column(name = "fraud_score")
-    private Double fraudScore;
-
-    @Builder.Default
-    @Column(name = "flagged")
-    private Boolean flagged = false;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)

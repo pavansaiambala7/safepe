@@ -5,9 +5,7 @@ import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
 import com.safepe.payment.dto.TransactionEvent;
-import com.safepe.payment.model.Merchant;
 import com.safepe.payment.model.Transaction;
-import com.safepe.payment.repository.MerchantRepository;
 import com.safepe.payment.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +19,6 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +27,6 @@ public class PaymentService {
 
     private final RazorpayClient razorpayClient;
     private final TransactionRepository transactionRepository;
-    private final MerchantRepository merchantRepository;
     private final PaymentEventProducer paymentEventProducer;
 
     @Value("${safepe.razorpay.webhook-secret:dummy_webhook_secret}")
@@ -44,9 +40,6 @@ public class PaymentService {
         log.info("💸 Creating payment order of ₹{} for user {} to {}", amount, userId, upiId);
 
         try {
-            Optional<Merchant> merchantOpt = merchantRepository.findByUpiIdMasked(upiId);
-            Merchant merchant = merchantOpt.orElse(null);
-
             BigDecimal amountInPaise = amount.multiply(new BigDecimal(100));
 
             JSONObject orderRequest = new JSONObject();
@@ -59,17 +52,16 @@ public class PaymentService {
 
             Transaction transaction = Transaction.builder()
                     .userId(userId)
-                    .merchant(merchant)
+                    .payeeUpi(upiId)
                     .amount(amount)
                     .type("UPI")
                     .status("PENDING")
                     .razorpayOrderId(orderId)
-                    .fraudScore(merchant != null ? merchant.getTrustScore() : 70.0)
                     .build();
 
             transactionRepository.save(transaction);
 
-            // ── Publish to Kafka for asynchronous fraud detection ────────────
+            // ── Publish to Kafka (async read-model + notifications) ──────────
             try {
                 TransactionEvent event = TransactionEvent.builder()
                         .transactionId(transaction.getId())
@@ -79,8 +71,6 @@ public class PaymentService {
                         .currency("INR")
                         .type("UPI")
                         .razorpayOrderId(orderId)
-                        .merchantName(merchant != null ? merchant.getName() : "Unknown")
-                        .merchantTrustScore(merchant != null ? merchant.getTrustScore() : null)
                         .timestamp(LocalDateTime.now())
                         .build();
                 paymentEventProducer.publishTransactionEvent(event);

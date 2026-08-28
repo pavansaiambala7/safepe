@@ -42,7 +42,7 @@ export default function Architecture() {
       icon: <Server size={28} color="#3b82f6" />,
       tag: 'BACKEND CORE',
       color: '#3b82f6',
-      description: 'Central orchestrator handling payments, merchant verification, bank transfers, and asynchronous Kafka event dispatching.',
+      description: 'Central orchestrator handling payments, bank transfers, and asynchronous Kafka event dispatching with Clerk JWT auth.',
       responsibilities: [
         'Stateless REST API gateway with IP token-bucket rate limiting',
         'Razorpay Payment Gateway order creation & signature verification',
@@ -50,7 +50,7 @@ export default function Architecture() {
         'Asynchronous transaction-events publication to Apache Kafka'
       ],
       metrics: {
-        'Supported Merchants': '550+ Active',
+        'AI Features': '3 Active',
         'Platform Uptime': '99.5% SLA',
         'Razorpay Webhooks': '200+ Processed',
         'Rate Limit': '100 req/min per IP'
@@ -148,7 +148,7 @@ export default function Architecture() {
           SafePe Architecture & Live Benchmarks
         </h1>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: 16, maxWidth: 700, margin: '0 auto', lineHeight: 1.6 }}>
-          Database-per-service distributed architecture supporting <strong>550+ merchants</strong> at <strong>99.5% uptime</strong> with LangChain4j Agentic AI fraud reasoning.
+          Event-driven distributed architecture with <strong>3 genuine AI features</strong> — Money Assistant RAG, Spending Insights, and SMS Scam Scanner — powered by LangChain4j Agentic AI reasoning.
         </p>
       </div>
 
@@ -172,9 +172,9 @@ export default function Architecture() {
         </div>
 
         <div className="surface-panel" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #3b82f6' }}>
-          <div style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6', marginBottom: 4 }}>550+</div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>Active Merchants</div>
-          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>99.5% Platform Uptime</div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: '#3b82f6', marginBottom: 4 }}>3</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>AI Features</div>
+          <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', marginTop: 2 }}>Money Assistant • Insights • Scam Scanner</div>
         </div>
 
         <div className="surface-panel" style={{ padding: '20px', textAlign: 'center', borderTop: '4px solid #f59e0b' }}>

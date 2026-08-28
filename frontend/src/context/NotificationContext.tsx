@@ -9,7 +9,6 @@ export interface FraudDetail {
   matchedPatternDescription: string;
   merchantName: string;
   merchantUpi: string;
-  merchantTrustScore: number;
   reportedCount: number;
   action: 'BLOCK' | 'FLAG_VERIFICATION' | 'ALLOW';
   refundId?: string;
@@ -63,7 +62,6 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
       matchedPatternDescription: 'Your Paytm KYC has expired. Complete your KYC verification now by sharing your Aadhaar number...',
       merchantName: 'KYC Update Desk (Fake)',
       merchantUpi: 'customercare_kyc@ybl',
-      merchantTrustScore: 0.0,
       reportedCount: 18,
       action: 'BLOCK',
       refundId: 'rzp_rfnd_92817482',
@@ -97,7 +95,6 @@ const INITIAL_NOTIFICATIONS: NotificationItem[] = [
       matchedPatternDescription: 'Automated clawback from nodal account before merchant settlement.',
       merchantName: 'KYC Update Desk (Fake)',
       merchantUpi: 'customercare_kyc@ybl',
-      merchantTrustScore: 0.0,
       reportedCount: 18,
       action: 'BLOCK',
       refundId: 'rzp_rfnd_92817482',
@@ -178,7 +175,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
               matchedPatternDescription: data.matchedPatternDescription || '',
               merchantName: data.merchantName || '',
               merchantUpi: data.merchantUpi || data.upiId || '',
-              merchantTrustScore: data.merchantTrustScore || 0,
               reportedCount: data.reportedCount || 0,
               action: data.action || 'ALLOW',
               refundId: data.refundId,
@@ -304,7 +300,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         matchedPatternDescription: 'I am calling from customer care. Your order has a refund of Rs 5000. Enter UPI PIN to claim...',
         merchantName: 'Fake Customer Refund Desk',
         merchantUpi: upiId,
-        merchantTrustScore: 0.05,
         reportedCount: 24,
         action: 'BLOCK',
         refundId,
@@ -339,8 +334,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           matchedPatternDescription: 'Escrow auto-clawback executed before settlement cycle.',
           merchantName: 'Fake Customer Refund Desk',
           merchantUpi: upiId,
-          merchantTrustScore: 0.05,
-          reportedCount: 24,
+            reportedCount: 24,
           action: 'BLOCK',
           refundId,
           refundAmount: amount

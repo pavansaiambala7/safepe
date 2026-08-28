@@ -9,11 +9,10 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaConfig {
 
     public static final String TRANSACTION_EVENTS_TOPIC = "transaction-events";
-    public static final String FRAUD_ALERTS_TOPIC = "fraud-alerts";
 
     @Bean
-    public NewTopic fraudAlertsTopic() {
-        return TopicBuilder.name(FRAUD_ALERTS_TOPIC)
+    public NewTopic transactionEventsTopic() {
+        return TopicBuilder.name(TRANSACTION_EVENTS_TOPIC)
                 .partitions(3)
                 .replicas(1)
                 .build();

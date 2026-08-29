@@ -145,6 +145,33 @@ export default function Dashboard() {
             }}>
               <Radio size={14} color="#06b6d4" /> Kafka Bus
             </Link>
+
+            <button
+              onClick={async () => {
+                try {
+                  const token = await getToken();
+                  await api.post('/bills/run-reminders', {}, { headers: { Authorization: `Bearer ${token}` } });
+                } catch (e) {
+                  console.warn('Bill reminder run error:', e);
+                }
+              }}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 14px',
+                borderRadius: 10,
+                background: 'rgba(2, 132, 199, 0.1)',
+                border: '1px solid rgba(2, 132, 199, 0.4)',
+                color: '#0284c7',
+                cursor: 'pointer',
+                fontSize: 12,
+                fontWeight: 700,
+                boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              }}
+            >
+              <Zap size={14} color="#0284c7" /> Trigger Bill Reminders
+            </button>
           </div>
         </div>
       </div>

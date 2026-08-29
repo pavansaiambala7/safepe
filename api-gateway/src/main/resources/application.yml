@@ -50,6 +50,10 @@ spring:
           uri: lb://payment-service
           predicates:
             - Path=/api/v1/history/**
+        - id: payment-service-bills
+          uri: lb://payment-service
+          predicates:
+            - Path=/api/v1/bills/**
 
         # ── 2. Fraud Service Routes ───────────────────────────────────────────
         - id: fraud-service-fraud

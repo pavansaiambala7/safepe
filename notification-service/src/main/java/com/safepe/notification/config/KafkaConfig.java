@@ -9,6 +9,7 @@ import org.springframework.kafka.config.TopicBuilder;
 public class KafkaConfig {
 
     public static final String TRANSACTION_EVENTS_TOPIC = "transaction-events";
+    public static final String BILL_REMINDERS_TOPIC = "bill-reminders";
 
     @Bean
     public NewTopic transactionEventsTopic() {

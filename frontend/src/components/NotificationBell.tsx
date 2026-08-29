@@ -85,6 +85,7 @@ export default function NotificationBell() {
     if (filter === 'FRAUD_ESCROW') return n.type === 'FRAUD_ALERT';
     if (filter === 'REFUNDS') return n.type === 'ESCROW_REFUND' || n.type === 'REFUND_INITIATED';
     if (filter === 'SECURITY') return n.type === 'SECURITY';
+    if (filter === 'REMINDERS') return n.type === 'REMINDER';
     return true;
   });
 
@@ -113,6 +114,10 @@ export default function NotificationBell() {
         return <Hourglass size={20} color="#f59e0b" />;
       case 'SECURITY':
         return <Lock size={20} color="#3b82f6" />;
+      case 'REMINDER':
+        return <Zap size={20} color="#0284c7" />;
+      default:
+        return <Bell size={20} color="#059669" />;
     }
   };
 
@@ -157,6 +162,22 @@ export default function NotificationBell() {
           badgeBg: '#3b82f620',
           badgeColor: '#2563eb',
           label: 'VAULT'
+        };
+      case 'REMINDER':
+        return {
+          bg: '#0284c715',
+          border: 'rgba(2, 132, 199, 0.35)',
+          badgeBg: '#0284c725',
+          badgeColor: '#0284c7',
+          label: 'DUE REMINDER'
+        };
+      default:
+        return {
+          bg: 'rgba(16, 185, 129, 0.1)',
+          border: 'rgba(16, 185, 129, 0.25)',
+          badgeBg: 'rgba(16, 185, 129, 0.15)',
+          badgeColor: '#059669',
+          label: 'ALERT'
         };
     }
   };
@@ -441,6 +462,27 @@ export default function NotificationBell() {
               >
                 + Fraud & Refund
               </button>
+              <button
+                onClick={async () => {
+                  try {
+                    await fetch('/api/v1/bills/run-reminders', { method: 'POST' });
+                  } catch (e) {
+                    console.warn('Manual bill reminder API error:', e);
+                  }
+                }}
+                style={{
+                  padding: '4px 10px',
+                  borderRadius: 12,
+                  border: '1px solid #0284c7',
+                  background: '#0284c715',
+                  color: '#0284c7',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  cursor: 'pointer'
+                }}
+              >
+                + Bill Due
+              </button>
             </div>
           </div>
 
@@ -458,6 +500,7 @@ export default function NotificationBell() {
             {[
               { key: 'ALL', label: 'All' },
               { key: 'SUCCESS', label: 'Payments' },
+              { key: 'REMINDERS', label: 'Reminders' },
               { key: 'FRAUD_ESCROW', label: 'Fraud' },
               { key: 'REFUNDS', label: 'Refunds' },
               { key: 'SECURITY', label: 'Vault' }

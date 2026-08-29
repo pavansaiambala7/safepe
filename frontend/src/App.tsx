@@ -21,7 +21,6 @@ import UtilityPayments from './pages/UtilityPayments';
 import SelfTransfer from './pages/SelfTransfer';
 import CheckBalance from './pages/CheckBalance';
 import Cards from './pages/Cards';
-import AgenticFraudAnalyzer from './pages/AgenticFraudAnalyzer';
 import KafkaEventMonitor from './pages/KafkaEventMonitor';
 import Architecture from './pages/Architecture';
 
@@ -112,7 +111,7 @@ function InnerApp() {
               <Route path="/check-balance" element={<CheckBalance />} />
               <Route path="/balance" element={<CheckBalance />} />
               <Route path="/cards" element={<Cards />} />
-              <Route path="/agentic-fraud" element={<AgenticFraudAnalyzer />} />
+              <Route path="/agentic-fraud" element={<ScamScanner />} />
               <Route path="/events" element={<KafkaEventMonitor />} />
             </Routes>
           </SignedIn>

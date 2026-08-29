@@ -61,13 +61,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </Link>
           
           <Link to="/chatbot" className="sidebar-link" onClick={onClose}>
-            <Bot size={24} color="#8b5cf6" />
-            AI Assistant
-          </Link>
-
-          <Link to="/agentic-fraud" className="sidebar-link" onClick={onClose}>
-            <Brain size={24} color="#8b5cf6" />
-            Agentic AI Analyzer
+            <Bot size={24} color="#10b981" />
+            AI Money Assistant & Scam Shield
           </Link>
 
           <Link to="/events" className="sidebar-link" onClick={onClose}>

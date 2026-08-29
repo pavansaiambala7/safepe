@@ -112,7 +112,7 @@ export default function Dashboard() {
               <Layers size={14} color="#10b981" /> Architecture
             </Link>
 
-            <Link to="/agentic-fraud" style={{
+            <Link to="/chatbot" style={{
               display: 'inline-flex',
               alignItems: 'center',
               gap: 6,
@@ -126,7 +126,7 @@ export default function Dashboard() {
               fontWeight: 700,
               boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
             }}>
-              <Cpu size={14} color="#8b5cf6" /> AI Fraud Engine
+              <Bot size={14} color="#10b981" /> AI Assistant & Shield
             </Link>
 
             <Link to="/events" style={{

@@ -269,8 +269,8 @@ export default function Architecture() {
                 </div>
               )}
               {selectedService === 2 && (
-                <Link to="/agentic-fraud" style={{ padding: '6px 14px', borderRadius: 8, background: '#8b5cf6', color: 'white', textDecoration: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Cpu size={14} /> Open AI Analyzer
+                <Link to="/chatbot" style={{ padding: '6px 14px', borderRadius: 8, background: '#10b981', color: 'white', textDecoration: 'none', fontSize: 12, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Bot size={14} /> Open AI Assistant & Shield
                 </Link>
               )}
               {selectedService === 3 && (
@@ -435,8 +435,8 @@ export default function Architecture() {
           <Link to="/events" className="btn-primary" style={{ padding: '12px 24px', borderRadius: 24, fontSize: 14, textDecoration: 'none' }}>
             <Radio size={16} /> Open Kafka Monitor
           </Link>
-          <Link to="/agentic-fraud" style={{ padding: '12px 24px', borderRadius: 24, fontSize: 14, textDecoration: 'none', background: 'white', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', fontWeight: 600 }}>
-            <Cpu size={16} style={{ verticalAlign: 'middle', marginRight: 6 }} /> Run Agentic Fraud Test
+          <Link to="/chatbot" style={{ padding: '12px 24px', borderRadius: 24, fontSize: 14, textDecoration: 'none', background: 'white', border: '1px solid var(--color-border)', color: 'var(--color-text-primary)', fontWeight: 600 }}>
+            <Bot size={16} color="#10b981" style={{ verticalAlign: 'middle', marginRight: 6 }} /> Open AI Assistant & Scam Shield
           </Link>
         </div>
       </div>

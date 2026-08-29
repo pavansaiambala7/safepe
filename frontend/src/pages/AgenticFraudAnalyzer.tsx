@@ -20,6 +20,10 @@ interface MatchedPattern {
 
 interface AgenticResult {
   riskScore: number;
+  trustScore?: number;
+  trustLevel?: string;
+  isRagPatternMatched?: boolean;
+  maxSimilarityPercent?: number;
   action: string;
   summary: string;
   reasoningSteps: ReasoningStep[];
@@ -215,14 +219,14 @@ export default function AgenticFraudAnalyzer() {
       {/* Results */}
       {result && (
         <>
-          {/* Risk Score Card */}
+          {/* Trust & Risk Score Card */}
           <div className="surface-panel" style={{
             marginBottom: 24, padding: 24,
             borderLeft: `4px solid ${getActionColor(result.action)}`
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 16 }}>
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8, flexWrap: 'wrap' }}>
                   <div style={{ color: getActionColor(result.action) }}>{getActionIcon(result.action)}</div>
                   <span style={{
                     padding: '4px 12px', borderRadius: 20, fontSize: 13, fontWeight: 700,
@@ -230,22 +234,54 @@ export default function AgenticFraudAnalyzer() {
                   }}>
                     {result.action}
                   </span>
+                  <span style={{
+                    padding: '4px 10px', borderRadius: 16, fontSize: 12, fontWeight: 700,
+                    background: (result.trustScore ?? (100 - result.riskScore)) >= 70 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)',
+                    color: (result.trustScore ?? (100 - result.riskScore)) >= 70 ? '#059669' : '#dc2626'
+                  }}>
+                    🛡️ {result.trustScore ?? (100 - result.riskScore)}% Trust Score
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    padding: '3px 8px',
+                    borderRadius: '8px',
+                    fontWeight: '700',
+                    background: result.isRagPatternMatched ? 'rgba(239,68,68,0.12)' : 'rgba(16,185,129,0.12)',
+                    color: result.isRagPatternMatched ? '#dc2626' : '#059669'
+                  }}>
+                    {result.isRagPatternMatched ? '⚠️ Vector DB Pattern Match (≥75% Risk)' : '✅ RAG Cleared (<50% Low Risk)'}
+                  </span>
                   <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                     ⚡ {result.processingTimeMs}ms
                   </span>
                 </div>
                 <p style={{ margin: 0, fontSize: 14, color: 'var(--color-text-secondary)' }}>{result.summary}</p>
               </div>
-              <div style={{
-                width: 80, height: 80, borderRadius: '50%', display: 'flex', flexDirection: 'column',
-                alignItems: 'center', justifyContent: 'center',
-                border: `4px solid ${getActionColor(result.action)}`,
-                background: getActionColor(result.action) + '10'
-              }}>
-                <span style={{ fontSize: 24, fontWeight: 800, color: getActionColor(result.action) }}>
-                  {result.riskScore}
-                </span>
-                <span style={{ fontSize: 10, color: 'var(--color-text-secondary)' }}>Risk %</span>
+
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{
+                  width: 84, height: 84, borderRadius: '50%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  border: `4px solid ${getActionColor(result.action)}`,
+                  background: getActionColor(result.action) + '10'
+                }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: getActionColor(result.action) }}>
+                    {result.trustScore ?? (100 - result.riskScore)}%
+                  </span>
+                  <span style={{ fontSize: 9, color: 'var(--color-text-secondary)', fontWeight: 700 }}>Trust Score</span>
+                </div>
+
+                <div style={{
+                  width: 84, height: 84, borderRadius: '50%', display: 'flex', flexDirection: 'column',
+                  alignItems: 'center', justifyContent: 'center',
+                  border: '4px solid var(--color-border)',
+                  background: 'var(--color-bg-secondary)'
+                }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: 'var(--color-text-secondary)' }}>
+                    {result.riskScore}%
+                  </span>
+                  <span style={{ fontSize: 9, color: 'var(--color-text-secondary)', fontWeight: 700 }}>Risk Score</span>
+                </div>
               </div>
             </div>
           </div>

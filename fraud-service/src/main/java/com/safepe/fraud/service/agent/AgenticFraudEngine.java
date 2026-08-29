@@ -94,51 +94,76 @@ public class AgenticFraudEngine {
                         ragResult, merchantResult, velocityResult))
                 .build());
 
-        // STEP 3: Risk Evaluation & Action Decision
+        // STEP 3: RAG Vector DB Trust & Risk Evaluation
+        boolean isRagPatternMatched = !matchedPatterns.isEmpty();
+        double maxSimilarity = matchedPatterns.stream()
+                .mapToDouble(MatchedPattern::getSimilarityPercent)
+                .max().orElse(0.0);
+
         int riskScore;
+        int trustScore;
+        String trustLevel;
         String action;
         String finalSummary;
 
+        if (isRagPatternMatched && maxSimilarity >= 60.0) {
+            // Pattern found in Vector DB: Risk is 75% or above, Trust Score is low
+            riskScore = (int) Math.max(75, Math.min(99, Math.round(maxSimilarity)));
+            trustScore = Math.max(1, 100 - riskScore); // Trust <= 25%
+            trustLevel = "LOW_TRUST";
+            action = riskScore >= 85 ? "BLOCK" : "FLAG_VERIFICATION";
+            finalSummary = String.format("RAG Vector DB match (%.1f%% similarity to known fraud). High risk detected.", maxSimilarity);
+        } else {
+            // No matching fraud pattern in Vector DB: Risk is below 50% (Low Risk), High Trust Score
+            riskScore = 15; // Low risk (< 50%)
+            trustScore = 92; // High trust (> 75%)
+            trustLevel = "HIGH_TRUST";
+            action = "ALLOW";
+            finalSummary = "RAG Vector DB verified: No matching fraud signatures detected. Transaction cleared.";
+        }
+
         try {
             String evaluationPrompt = String.format(
-                "You are a risk evaluation agent for SafePe bank. Based on the following evidence, " +
-                "provide a risk score (0-100) and action (ALLOW, BLOCK, or FLAG_VERIFICATION).\n\n" +
+                "You are a trust and risk evaluation agent for SafePe bank. Based on the evidence below, " +
+                "provide a final concise summary for the user and security logs.\n\n" +
                 "EVIDENCE:\n" +
                 "1. Classification: %s\n" +
-                "2. RAG Pattern Matches: %s\n" +
+                "2. RAG Pattern Matches: %s (Max Similarity: %.1f%%)\n" +
                 "3. Merchant Check: %s\n" +
-                "4. Velocity Check: %s\n\n" +
+                "4. Velocity Check: %s\n" +
+                "5. Calculated Trust Score: %d%% | Risk Score: %d%% | Action: %s\n\n" +
                 "Original Message: \"%s\"\n\n" +
-                "Respond in EXACTLY this format:\n" +
-                "RISK_SCORE: <number 0-100>\n" +
-                "ACTION: <ALLOW|BLOCK|FLAG_VERIFICATION>\n" +
-                "SUMMARY: <one line explanation>",
-                classificationResult, ragResult, merchantResult, velocityResult, message
+                "Respond in ONE concise line explaining the verdict.",
+                classificationResult, ragResult, maxSimilarity, merchantResult, velocityResult,
+                trustScore, riskScore, action, message
             );
 
-            String aiResponse = geminiChatModel.generate(evaluationPrompt);
-            riskScore = parseRiskScore(aiResponse);
-            action = parseAction(aiResponse);
-            finalSummary = parseSummary(aiResponse);
-
+            String aiSummary = geminiChatModel.generate(evaluationPrompt);
+            if (aiSummary != null && !aiSummary.isBlank()) {
+                finalSummary = aiSummary.trim().replace("\n", " ");
+            }
         } catch (Exception e) {
-            riskScore = calculateFallbackRiskScore(matchedPatterns, classificationResult);
-            action = riskScore >= 75 ? "BLOCK" : (riskScore >= 45 ? "FLAG_VERIFICATION" : "ALLOW");
-            finalSummary = "Risk evaluated from pattern matching (AI fallback): " + classificationResult;
+            log.warn("Gemini summary synthesis skipped: {}", e.getMessage());
         }
 
         steps.add(ReasoningStep.builder()
                 .stepNumber(3)
-                .stepName("Risk Evaluation & Action Decision")
-                .description("Gemini AI synthesizes all evidence to determine final risk score and action")
-                .result(String.format("Risk Score: %d%% | Action: %s | %s", riskScore, action, finalSummary))
+                .stepName("Trust & Risk Evaluation (RAG Vector Grounded)")
+                .description("Synthesizes Vector DB pattern cosine similarity to compute final Trust Score and Action")
+                .result(String.format("Trust Score: %d%% (Level: %s) | Risk: %d%% | Action: %s | %s",
+                        trustScore, trustLevel, riskScore, action, finalSummary))
                 .build());
 
         long processingTime = System.currentTimeMillis() - startTime;
-        log.info("✅ Step 3 Complete — Risk: {}%, Action: {}, Time: {}ms", riskScore, action, processingTime);
+        log.info("✅ Step 3 Complete — Trust: {}%, Risk: {}%, Action: {}, Time: {}ms",
+                trustScore, riskScore, action, processingTime);
 
         return AgenticFraudResult.builder()
                 .riskScore(riskScore)
+                .trustScore(trustScore)
+                .trustLevel(trustLevel)
+                .isRagPatternMatched(isRagPatternMatched)
+                .maxSimilarityPercent(Math.round(maxSimilarity * 100.0) / 100.0)
                 .action(action)
                 .summary(finalSummary)
                 .reasoningSteps(steps)

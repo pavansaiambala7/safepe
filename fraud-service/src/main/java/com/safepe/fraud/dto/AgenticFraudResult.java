@@ -14,7 +14,11 @@ import java.util.List;
 @AllArgsConstructor
 public class AgenticFraudResult implements Serializable {
 
-    private int riskScore;              // 0-100
+    private int riskScore;              // 0-100 (Risk metric)
+    private int trustScore;             // 0-100 (Trust metric: >= 75 is high trust, <= 25 is low trust)
+    private String trustLevel;          // HIGH_TRUST, MODERATE_TRUST, LOW_TRUST
+    private boolean isRagPatternMatched;// True if vector DB matched a known scam pattern
+    private double maxSimilarityPercent;// Highest cosine similarity % found in Vector DB
     private String action;              // ALLOW, BLOCK, FLAG_VERIFICATION
     private String summary;             // One-line AI verdict
     private List<ReasoningStep> reasoningSteps;

@@ -174,7 +174,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - VITE_VITE_API_URL=http://localhost:8080/api
+      - VITE_VITE_API_URL=http://13.60.235.28:8080/api
       - VITE_VITE_CLERK_PUBLISHABLE_KEY=${VITE_VITE_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsubG9jYWw}
       - VITE_VITE_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
     depends_on:

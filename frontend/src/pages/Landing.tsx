@@ -1,301 +1,381 @@
-import { 
-  ShieldCheck, Lock, Zap, GitFork, Server, Cpu, Radio, 
-  Database, Bell, CheckCircle2, ArrowRight, Activity, Volume2 
-} from 'lucide-react';
-import { SignInButton } from '@clerk/react';
-import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState } from "react";
+import {
+  ShieldCheck, Lock, Zap, GitFork, Server,
+  Radio, Database, Bell, ArrowRight, Activity, Sparkles, ChevronRight,
+  Shield, Brain, Wallet, Eye, AlertTriangle
+} from "lucide-react";
+import { SignInButton } from "@clerk/react";
+
+function Counter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [value, setValue] = useState(0);
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const obs = new IntersectionObserver(([e]) => {
+      if (!e.isIntersecting) return;
+      obs.disconnect();
+      let start = 0;
+      const step = target / 60;
+      const tick = () => {
+        start += step;
+        if (start < target) { setValue(Math.floor(start)); requestAnimationFrame(tick); }
+        else setValue(target);
+      };
+      requestAnimationFrame(tick);
+    }, { threshold: 0.3 });
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [target]);
+  return <span ref={ref}>{value.toLocaleString()}{suffix}</span>;
+}
+
+function ParticleCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext("2d")!;
+    let W = (canvas.width = window.innerWidth);
+    const H = (canvas.height = 700);
+    const pts = Array.from({ length: 60 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      r: Math.random() * 2 + 1,
+    }));
+    let raf: number;
+    const draw = () => {
+      ctx.clearRect(0, 0, W, H);
+      pts.forEach((p) => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0 || p.x > W) p.vx *= -1;
+        if (p.y < 0 || p.y > H) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba(16,185,129,0.5)";
+        ctx.fill();
+      });
+      pts.forEach((a, i) =>
+        pts.slice(i + 1).forEach((b) => {
+          const d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < 120) {
+            ctx.beginPath();
+            ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y);
+            ctx.strokeStyle = `rgba(16,185,129,${0.12 * (1 - d / 120)})`;
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+          }
+        })
+      );
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    const onResize = () => { W = canvas.width = window.innerWidth; };
+    window.addEventListener("resize", onResize);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
+  }, []);
+  return (
+    <canvas ref={canvasRef} style={{
+      position: "absolute", top: 0, left: 0, width: "100%", height: "700px",
+      pointerEvents: "none", opacity: 0.7,
+    }} />
+  );
+}
+
+function FeatureCard({ icon, color, label, title, desc, delay }: {
+  icon: React.ReactNode; color: string; label: string;
+  title: string; desc: string; delay: string;
+}) {
+  return (
+    <div
+      style={{
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.08)",
+        borderRadius: "20px", padding: "28px",
+        backdropFilter: "blur(12px)",
+        transition: "all 0.4s cubic-bezier(0.16,1,0.3,1)",
+        animation: `fadeInUp 0.8s cubic-bezier(0.16,1,0.3,1) ${delay} both`,
+        cursor: "default",
+      }}
+      onMouseEnter={(e) => {
+        const t = e.currentTarget;
+        t.style.transform = "translateY(-6px)";
+        t.style.borderColor = `${color}50`;
+        t.style.boxShadow = `0 20px 40px ${color}15`;
+        t.style.background = "rgba(255,255,255,0.06)";
+      }}
+      onMouseLeave={(e) => {
+        const t = e.currentTarget;
+        t.style.transform = "translateY(0)";
+        t.style.borderColor = "rgba(255,255,255,0.08)";
+        t.style.boxShadow = "none";
+        t.style.background = "rgba(255,255,255,0.03)";
+      }}
+    >
+      <div style={{
+        width: "52px", height: "52px", borderRadius: "14px",
+        background: `${color}20`, display: "flex", alignItems: "center",
+        justifyContent: "center", marginBottom: "18px",
+        border: `1px solid ${color}30`,
+      }}>{icon}</div>
+      <div style={{ fontSize: "10px", fontWeight: "800", color, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "8px" }}>{label}</div>
+      <h3 style={{ fontSize: "17px", fontWeight: "700", color: "#f1f5f9", marginBottom: "10px", letterSpacing: "-0.02em" }}>{title}</h3>
+      <p style={{ fontSize: "13px", color: "#94a3b8", lineHeight: "1.7", margin: 0 }}>{desc}</p>
+    </div>
+  );
+}
+
+function StatBadge({ value, suffix, label, color }: { value: number; suffix?: string; label: string; color: string }) {
+  return (
+    <div style={{
+      textAlign: "center", padding: "28px 20px",
+      background: "rgba(255,255,255,0.03)",
+      border: `1px solid ${color}25`, borderRadius: "20px",
+      backdropFilter: "blur(12px)",
+    }}>
+      <div style={{ fontSize: "42px", fontWeight: "900", color, letterSpacing: "-0.04em", lineHeight: 1 }}>
+        <Counter target={value} suffix={suffix} />
+      </div>
+      <div style={{ fontSize: "12px", color: "#94a3b8", marginTop: "8px", fontWeight: "600" }}>{label}</div>
+    </div>
+  );
+}
+
+function PipeStep({ icon, label, sub, color }: { icon: React.ReactNode; label: string; sub: string; color: string }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px", flex: 1 }}>
+      <div style={{
+        width: "60px", height: "60px", borderRadius: "16px",
+        background: `${color}15`, border: `1.5px solid ${color}40`,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        boxShadow: `0 0 20px ${color}20`,
+      }}>{icon}</div>
+      <div style={{ textAlign: "center" }}>
+        <div style={{ fontSize: "13px", fontWeight: "700", color: "#e2e8f0" }}>{label}</div>
+        <div style={{ fontSize: "11px", color: "#64748b", marginTop: "2px" }}>{sub}</div>
+      </div>
+    </div>
+  );
+}
 
 export default function Landing() {
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', paddingTop: '40px', paddingBottom: '80px' }}>
-      
-      {/* Hero Section */}
-      <div className="animate-fade-up" style={{ textAlign: 'center' }}>
-        
-        {/* Architecture Pill */}
-        <div style={{ 
-          display: 'inline-flex', 
-          alignItems: 'center', 
-          gap: '8px', 
-          padding: '6px 18px', 
-          borderRadius: '30px', 
-          background: 'rgba(16, 185, 129, 0.1)', 
-          border: '1px solid rgba(16, 185, 129, 0.3)',
-          marginBottom: '24px'
-        }}>
-          <ShieldCheck size={18} color="var(--color-primary)" />
-          <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-accent)' }}>
-            5-Service Distributed Microservices Platform • 99.5% Uptime
-          </span>
-        </div>
-        
-        <h1 style={{ 
-          fontSize: '52px', 
-          lineHeight: '1.15', 
-          marginBottom: '20px',
-          color: 'var(--color-text-primary)',
-          fontWeight: '800',
-          letterSpacing: '-0.03em'
-        }}>
-          SafePe — Next-Gen Financial <br/>
-          <span style={{ 
-            background: 'linear-gradient(135deg, #10b981, #059669)', 
-            WebkitBackgroundClip: 'text', 
-            WebkitTextFillColor: 'transparent' 
-          }}>
-            Safety & Payments Engine
-          </span>
-        </h1>
-        
-        <p style={{ 
-          color: 'var(--color-text-secondary)', 
-          fontSize: '18px', 
-          maxWidth: '750px', 
-          margin: '0 auto 36px auto',
-          lineHeight: '1.6'
-        }}>
-          Engineered as a <strong>5-service distributed platform</strong> with event-driven architecture. Features <strong>Money Assistant RAG</strong>, <strong>Spending Insights AI</strong>, and <strong>SMS Scam Scanner</strong>. Powered by <strong>LangChain4j Agentic AI</strong>, pgvector RAG semantic search, and real-time Kafka event streaming.
-        </p>
-        
-        {/* CTA Buttons */}
-        <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', alignItems: 'center', flexWrap: 'wrap', marginBottom: '48px' }}>
-          <SignInButton mode="modal">
-            <button className="btn-primary" style={{ fontSize: '16px', padding: '14px 32px', borderRadius: '30px' }}>
-              Launch SafePe Dashboard <ArrowRight size={18} />
-            </button>
-          </SignInButton>
+    <div style={{ background: "#030d1a", minHeight: "100vh", color: "#e2e8f0", fontFamily: "'Outfit', sans-serif", overflowX: "hidden" }}>
 
-          <a 
-            href="https://github.com/pavansaiambala7/safepe" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '10px',
-              padding: '14px 26px',
-              borderRadius: '30px',
-              border: '1px solid var(--color-border)',
-              background: 'white',
-              color: 'var(--color-text-primary)',
-              textDecoration: 'none',
-              fontSize: '15px',
-              fontWeight: '600',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.04)',
-              transition: 'all 0.3s ease'
-            }}
-          >
-            <GitFork size={18} color="#1e293b" />
-            GitHub Repository
-          </a>
-        </div>
-
-        {/* Live Architecture Benchmark Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-          gap: '16px', 
-          textAlign: 'left',
-          marginBottom: '64px'
-        }}>
-          <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #10b981' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: '#10b981', marginBottom: '4px' }}>92%</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>AI Fraud Accuracy</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>on 3,000+ Transactions (LangChain4j)</div>
+      {/* HERO */}
+      <section style={{ position: "relative", minHeight: "700px", display: "flex", alignItems: "center", justifyContent: "center", textAlign: "center", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "800px", height: "500px", background: "radial-gradient(ellipse at center, rgba(16,185,129,0.12) 0%, transparent 70%)", pointerEvents: "none" }} />
+        <ParticleCanvas />
+        <div style={{ position: "relative", zIndex: 2, maxWidth: "900px", padding: "0 24px", paddingTop: "80px" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", padding: "6px 18px 6px 8px", borderRadius: "50px", background: "rgba(16,185,129,0.1)", border: "1px solid rgba(16,185,129,0.25)", marginBottom: "32px", animation: "fadeInUp 0.6s ease both" }}>
+            <div style={{ background: "#10b981", borderRadius: "50px", padding: "4px 10px", fontSize: "11px", fontWeight: "800", color: "white" }}>LIVE</div>
+            <span style={{ fontSize: "13px", color: "#34d399", fontWeight: "600" }}>5-Service Distributed Microservices Platform &middot; AWS EC2</span>
           </div>
 
-          <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #8b5cf6' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: '#8b5cf6', marginBottom: '4px' }}>480ms</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>Redis Vector Latency</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Cut from 800ms via Redis Caching</div>
-          </div>
+          <h1 style={{ fontSize: "clamp(42px, 7vw, 80px)", fontWeight: "900", lineHeight: 1.05, letterSpacing: "-0.04em", marginBottom: "24px", animation: "fadeInUp 0.7s ease 0.1s both" }}>
+            <span style={{ color: "#f1f5f9" }}>The Future of</span><br />
+            <span style={{ background: "linear-gradient(135deg, #10b981 0%, #34d399 40%, #6ee7b7 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>AI-Powered Payments</span>
+          </h1>
 
-          <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #3b82f6' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: '#3b82f6', marginBottom: '4px' }}>3</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>AI Features</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>Money Assistant • Insights • Scam Scanner</div>
-          </div>
-
-          <div className="surface-panel" style={{ padding: '20px', borderTop: '4px solid #f59e0b' }}>
-            <div style={{ fontSize: '28px', fontWeight: '800', color: '#f59e0b', marginBottom: '4px' }}>1,000+</div>
-            <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--color-text-primary)' }}>Secured Accounts</div>
-            <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>JWT + AES-256 Cryptographic Vault</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 5-Service Distributed Microservices Platform Section */}
-      <div className="animate-fade-up" style={{ marginBottom: '64px' }}>
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <h2 style={{ fontSize: '32px', fontWeight: '800', color: 'var(--color-text-primary)' }}>
-            🏗️ 5-Service Distributed Architecture
-          </h2>
-          <p style={{ color: 'var(--color-text-secondary)', fontSize: '15px', marginTop: '6px' }}>
-            Strict database-per-service isolation for high reliability and zero single point of failure
+          <p style={{ fontSize: "18px", color: "#94a3b8", maxWidth: "650px", margin: "0 auto 40px", lineHeight: "1.7", animation: "fadeInUp 0.7s ease 0.2s both" }}>
+            Enterprise-grade UPI platform with <strong style={{ color: "#e2e8f0" }}>Gemini AI Money Assistant</strong>,{" "}
+            <strong style={{ color: "#e2e8f0" }}>pgvector Scam Scanner</strong>, real-time Kafka SSE streaming,
+            and AES-256 token vault � all containerized on AWS.
           </p>
-        </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
-          {/* Service 1 */}
-          <div className="surface-panel" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#10b98120', padding: '10px', borderRadius: '12px' }}>
-                <ShieldCheck size={24} color="#10b981" />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#10b981', textTransform: 'uppercase' }}>Service 1: Client</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>React 18 + Vite Frontend</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Zero-trust client interface with PhonePe-style emerald green sound notification bell, QR camera scanning, and NPCI UPI PIN workflows.
-            </p>
+          <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap", animation: "fadeInUp 0.7s ease 0.3s both" }}>
+            <SignInButton mode="modal">
+              <button
+                style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #10b981, #059669)", color: "white", border: "none", borderRadius: "50px", padding: "16px 36px", fontSize: "16px", fontWeight: "700", cursor: "pointer", fontFamily: "'Outfit', sans-serif", boxShadow: "0 0 30px rgba(16,185,129,0.4)", transition: "all 0.3s ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.boxShadow = "0 0 50px rgba(16,185,129,0.6)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(16,185,129,0.4)"; }}
+              >
+                <Sparkles size={18} /> Launch Dashboard <ArrowRight size={18} />
+              </button>
+            </SignInButton>
+            <a href="https://github.com/pavansaiambala7/safepe" target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: "10px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50px", padding: "16px 30px", fontSize: "15px", fontWeight: "600", color: "#cbd5e1", textDecoration: "none", backdropFilter: "blur(8px)", background: "rgba(255,255,255,0.04)", transition: "all 0.3s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(16,185,129,0.4)"; e.currentTarget.style.color = "#10b981"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.12)"; e.currentTarget.style.color = "#cbd5e1"; }}
+            >
+              <GitFork size={18} /> View on GitHub
+            </a>
           </div>
 
-          {/* Service 2 */}
-          <div className="surface-panel" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#3b82f620', padding: '10px', borderRadius: '12px' }}>
-                <Server size={24} color="#3b82f6" />
+          <div style={{ display: "flex", justifyContent: "center", gap: "24px", flexWrap: "wrap", marginTop: "56px", animation: "fadeInUp 0.8s ease 0.4s both" }}>
+            {[
+              { dot: "#10b981", label: "Eureka Registry", sub: ":8761" },
+              { dot: "#3b82f6", label: "API Gateway", sub: ":8080" },
+              { dot: "#8b5cf6", label: "AI Fraud Engine", sub: ":8082" },
+              { dot: "#f59e0b", label: "Kafka KRaft", sub: ":9092" },
+            ].map((s) => (
+              <div key={s.label} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: s.dot, boxShadow: `0 0 8px ${s.dot}`, animation: "pulse 2s ease-in-out infinite" }} />
+                <span style={{ fontSize: "12px", color: "#64748b", fontWeight: "600" }}>{s.label}</span>
+                <span style={{ fontSize: "11px", color: "#334155", fontFamily: "monospace" }}>{s.sub}</span>
               </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#3b82f6', textTransform: 'uppercase' }}>Service 2: Gateway</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>Spring Boot 3.2 Core API</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Handles 200+ Razorpay webhook events, IP token-bucket rate limiting, Clerk JWT auth, and Kafka event publishing.
-            </p>
-          </div>
-
-          {/* Service 3 */}
-          <div className="surface-panel" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#8b5cf620', padding: '10px', borderRadius: '12px' }}>
-                <Cpu size={24} color="#8b5cf6" />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#8b5cf6', textTransform: 'uppercase' }}>Service 3: AI Engine</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>LangChain4j Agentic Fraud Engine</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Multi-step reasoning pipeline with 3 specialized agents executing pattern classification, RAG vector search, and automated escrow freeze.
-            </p>
-          </div>
-
-          {/* Service 4 */}
-          <div className="surface-panel" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#06b6d420', padding: '10px', borderRadius: '12px' }}>
-                <Radio size={24} color="#06b6d4" />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#06b6d4', textTransform: 'uppercase' }}>Service 4: Event Bus</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>Apache Kafka (KRaft Mode)</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              High-throughput KRaft streaming bus with <code>transaction-events</code> and <code>fraud-alerts</code> topics for non-blocking asynchronous processing.
-            </p>
-          </div>
-
-          {/* Service 5 */}
-          <div className="surface-panel" style={{ padding: '24px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#f59e0b20', padding: '10px', borderRadius: '12px' }}>
-                <Database size={24} color="#f59e0b" />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#f59e0b', textTransform: 'uppercase' }}>Service 5: Storage</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>pgvector + Redis + AES Vault</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Exact cosine similarity search over 1,000+ fraud patterns, Redis cache cutting latency from 800ms → 480ms, and AES-256 GCM encrypted field vault.
-            </p>
-          </div>
-
-          {/* Bell Notifications */}
-          <div className="surface-panel" style={{ padding: '24px', border: '1px solid #10b98140', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(255, 255, 255, 0.95))' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px' }}>
-              <div style={{ background: '#10b981', padding: '10px', borderRadius: '12px' }}>
-                <Bell size={24} color="white" />
-              </div>
-              <div>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#059669', textTransform: 'uppercase' }}>Audio & Visual Alerting</span>
-                <h3 style={{ fontSize: '16px', margin: 0 }}>Real-Time Sound Bell Center</h3>
-              </div>
-            </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', lineHeight: '1.5', margin: 0 }}>
-              Web Audio API synthesized chimes for instant transaction feedback, high-risk fraud alerts, and automated escrow refund confirmations.
-            </p>
+            ))}
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* RAG & Redis Latency Optimization Highlight */}
-      <div className="surface-panel animate-fade-up" style={{ padding: '36px', marginBottom: '64px', background: 'linear-gradient(135deg, #ffffff, #f0fdf4)' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '32px', alignItems: 'center' }}>
+      {/* STATS */}
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "80px 24px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "20px" }}>
+          <StatBadge value={92} suffix="%" label="AI Fraud Detection Accuracy" color="#10b981" />
+          <StatBadge value={480} suffix="ms" label="Redis Vector Cache Latency" color="#8b5cf6" />
+          <StatBadge value={1000} suffix="+" label="Encrypted Vault Accounts" color="#3b82f6" />
+          <StatBadge value={5} label="Distributed Microservices" color="#f59e0b" />
+          <StatBadge value={3} label="LangChain4j AI Agents" color="#ec4899" />
+        </div>
+      </section>
+
+      <div style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(16,185,129,0.3), transparent)", margin: "0 24px" }} />
+
+      {/* FEATURES */}
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "80px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: "56px" }}>
+          <div style={{ fontSize: "11px", fontWeight: "800", color: "#10b981", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "14px" }}>Enterprise Capabilities</div>
+          <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: "900", color: "#f1f5f9", letterSpacing: "-0.03em", marginBottom: "14px" }}>Built for Production. Designed for Scale.</h2>
+          <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "560px", margin: "0 auto" }}>Every component is engineered with mathematical precision using industry-standard distributed systems patterns.</p>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
+          <FeatureCard icon={<Brain size={26} color="#10b981" />} color="#10b981" label="Service 1 - AI Engine" title="RAG Money Assistant" desc="Gemini-powered chatbot grounded in your real transaction history. Answers 'How much did I spend on food this month?' with pinpoint accuracy using LangChain4j retrieval." delay="0s" />
+          <FeatureCard icon={<Eye size={26} color="#8b5cf6" />} color="#8b5cf6" label="Service 2 - Fraud Detection" title="pgvector Scam Scanner" desc="Cosine similarity search over 1,000+ fraud embeddings (1536-dim Gemini vectors). Patterns 60%+ match triggers Risk 75%+ auto BLOCK with trust score reasoning." delay="0.1s" />
+          <FeatureCard icon={<Zap size={26} color="#f59e0b" />} color="#f59e0b" label="Service 3 - Payments" title="Razorpay UPI + QR Vault" desc="Full Razorpay order lifecycle, dynamic UPI QR generation, HMAC signature verification, and AES-256 GCM encrypted card/account tokenization." delay="0.2s" />
+          <FeatureCard icon={<Bell size={26} color="#ec4899" />} color="#ec4899" label="Service 4 - Real-time" title="Kafka SSE Notification Hub" desc="@Scheduled bill sweeper publishes BillReminderEvents to Kafka. notification-service streams them via SSE with Web Audio API chimes directly to the UI bell." delay="0.3s" />
+          <FeatureCard icon={<Shield size={26} color="#3b82f6" />} color="#3b82f6" label="Service 5 - Gateway" title="Clerk JWT + Rate Limiter" desc="Spring Cloud Gateway validates Clerk JWKS signatures stateless. Bucket4j token-bucket enforces 100 req/min per IP. Global CORS and reactive routing." delay="0.4s" />
+          <FeatureCard icon={<Database size={26} color="#06b6d4" />} color="#06b6d4" label="Service 6 - Data Layer" title="pgvector + Redis + Eureka" desc="Database-per-service isolation. Redis cuts vector query latency 40% (800ms to 480ms). Netflix Eureka provides dynamic service discovery and load balancing." delay="0.5s" />
+        </div>
+      </section>
+
+      <div style={{ height: "1px", background: "linear-gradient(90deg, transparent, rgba(139,92,246,0.3), transparent)", margin: "0 24px" }} />
+
+      {/* PIPELINE */}
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "80px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: "48px" }}>
+          <div style={{ fontSize: "11px", fontWeight: "800", color: "#8b5cf6", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "14px" }}>Event-Driven Architecture</div>
+          <h2 style={{ fontSize: "clamp(26px, 4vw, 40px)", fontWeight: "900", color: "#f1f5f9", letterSpacing: "-0.03em" }}>CQRS Payment Flow &mdash; End to End</h2>
+        </div>
+        <div style={{ background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.07)", borderRadius: "24px", padding: "40px 32px", backdropFilter: "blur(10px)" }}>
+          <div style={{ display: "flex", alignItems: "center", flexWrap: "wrap", justifyContent: "center", gap: "4px" }}>
+            <PipeStep icon={<Wallet size={26} color="#10b981" />} label="React UI" sub="Checkout" color="#10b981" />
+            <ChevronRight size={20} color="#334155" />
+            <PipeStep icon={<Server size={26} color="#3b82f6" />} label="API Gateway" sub=":8080 JWT" color="#3b82f6" />
+            <ChevronRight size={20} color="#334155" />
+            <PipeStep icon={<Zap size={26} color="#f59e0b" />} label="Payment Svc" sub="Razorpay" color="#f59e0b" />
+            <ChevronRight size={20} color="#334155" />
+            <PipeStep icon={<Radio size={26} color="#ec4899" />} label="Kafka KRaft" sub="tx-events" color="#ec4899" />
+            <ChevronRight size={20} color="#334155" />
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", flex: 1, minWidth: "140px" }}>
+              <PipeStep icon={<Brain size={22} color="#8b5cf6" />} label="AI Service" sub="RAG Model" color="#8b5cf6" />
+              <PipeStep icon={<Bell size={22} color="#10b981" />} label="Notif Svc" sub="SSE Push" color="#10b981" />
+            </div>
+          </div>
+
+          <div style={{ marginTop: "40px", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "32px" }}>
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "700", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "1px" }}>Vector Query Latency &mdash; Redis Cache Impact</div>
+            <div style={{ display: "grid", gap: "12px" }}>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
+                  <span style={{ color: "#64748b" }}>Standard pgvector Query</span>
+                  <span style={{ color: "#ef4444", fontWeight: "800" }}>800 ms</span>
+                </div>
+                <div style={{ height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{ width: "100%", height: "100%", background: "linear-gradient(90deg, #ef4444, #dc2626)", borderRadius: "4px" }} />
+                </div>
+              </div>
+              <div>
+                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
+                  <span style={{ color: "#10b981", fontWeight: "700" }}>Redis 7 In-Memory Cache</span>
+                  <span style={{ color: "#10b981", fontWeight: "800" }}>480 ms &middot; 40% faster</span>
+                </div>
+                <div style={{ height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                  <div style={{ width: "60%", height: "100%", background: "linear-gradient(90deg, #10b981, #059669)", borderRadius: "4px" }} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECURITY */}
+      <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "0 24px 80px" }}>
+        <div style={{ background: "linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.02) 100%)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "24px", padding: "40px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "32px", alignItems: "center" }}>
           <div>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '12px', fontWeight: '800', color: '#8b5cf6', textTransform: 'uppercase', marginBottom: '8px' }}>
-              <Zap size={15} color="#8b5cf6" /> Semantic AI Performance
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+              <Lock size={20} color="#10b981" />
+              <span style={{ fontSize: "11px", fontWeight: "800", color: "#10b981", textTransform: "uppercase", letterSpacing: "1.5px" }}>Security Architecture</span>
             </div>
-            <h3 style={{ fontSize: '26px', fontWeight: '800', color: 'var(--color-text-primary)', margin: '0 0 12px 0' }}>
-              RAG Pipeline with Gemini Embeddings + pgvector
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', lineHeight: '1.6', margin: '0 0 20px 0' }}>
-              Semantic similarity search over 1,000+ fraud patterns using 768-dimensional Gemini embeddings. Redis vector caching slashes decision latency from <strong>800ms down to 480ms</strong>.
-            </p>
-            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
-              <div style={{ padding: '8px 14px', borderRadius: '10px', background: 'white', border: '1px solid var(--color-border)', fontSize: '12px', fontWeight: '600' }}>
-                ⚡ 40% Latency Reduction
-              </div>
-              <div style={{ padding: '8px 14px', borderRadius: '10px', background: 'white', border: '1px solid var(--color-border)', fontSize: '12px', fontWeight: '600' }}>
-                🎯 92% Detection Accuracy
-              </div>
-            </div>
+            <h3 style={{ fontSize: "24px", fontWeight: "800", color: "#f1f5f9", letterSpacing: "-0.02em", marginBottom: "10px" }}>Zero-Trust. Encrypted End-to-End.</h3>
+            <p style={{ fontSize: "14px", color: "#64748b", lineHeight: "1.7" }}>Every transaction is protected by multiple independent security layers.</p>
           </div>
-
-          {/* Latency Comparison Card */}
-          <div style={{ background: 'white', padding: '24px', borderRadius: '16px', border: '1px solid var(--color-border)', boxShadow: '0 8px 30px rgba(0,0,0,0.04)' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '16px', color: 'var(--color-text-primary)' }}>
-              Live Vector Query Latency Comparison
-            </h4>
-            
-            <div style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '600', marginBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Standard pgvector Query</span>
-                <span style={{ color: '#ef4444', fontWeight: '700' }}>800 ms</span>
-              </div>
-              <div style={{ height: '10px', background: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ width: '100%', height: '100%', background: '#ef4444', borderRadius: '5px' }} />
+          {[
+            { icon: <ShieldCheck size={20} color="#10b981" />, title: "Clerk JWKS JWT", desc: "Stateless cryptographic signature validation at Gateway" },
+            { icon: <Lock size={20} color="#8b5cf6" />, title: "AES-256 GCM Vault", desc: "Card numbers and UPI IDs encrypted at rest with IV" },
+            { icon: <AlertTriangle size={20} color="#f59e0b" />, title: "Bucket4j Rate Limit", desc: "100 req/min per IP � blocks automated attacks" },
+            { icon: <Activity size={20} color="#3b82f6" />, title: "Vector Trust Score", desc: "Cosine similarity 60%+ auto BLOCK with audit log" },
+          ].map((item) => (
+            <div key={item.title} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
+              <div style={{ flexShrink: 0, marginTop: "2px" }}>{item.icon}</div>
+              <div>
+                <div style={{ fontSize: "14px", fontWeight: "700", color: "#e2e8f0", marginBottom: "4px" }}>{item.title}</div>
+                <div style={{ fontSize: "12px", color: "#64748b", lineHeight: "1.5" }}>{item.desc}</div>
               </div>
             </div>
+          ))}
+        </div>
+      </section>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: '700', marginBottom: '6px' }}>
-                <span style={{ color: '#059669' }}>Redis 7 In-Memory Vector Cache</span>
-                <span style={{ color: '#10b981', fontWeight: '800' }}>480 ms</span>
-              </div>
-              <div style={{ height: '10px', background: '#f1f5f9', borderRadius: '5px', overflow: 'hidden' }}>
-                <div style={{ width: '60%', height: '100%', background: 'linear-gradient(90deg, #10b981, #059669)', borderRadius: '5px' }} />
-              </div>
-            </div>
+      {/* CTA */}
+      <section style={{ maxWidth: "900px", margin: "0 auto", padding: "0 24px 100px" }}>
+        <div style={{ background: "linear-gradient(135deg, #0d2818 0%, #0a1628 100%)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: "28px", padding: "64px 40px", textAlign: "center", boxShadow: "0 0 80px rgba(16,185,129,0.1), inset 0 1px 0 rgba(255,255,255,0.05)" }}>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>???</div>
+          <h2 style={{ fontSize: "clamp(26px, 4vw, 42px)", fontWeight: "900", color: "#f1f5f9", letterSpacing: "-0.03em", marginBottom: "16px" }}>Ready to Explore SafePe?</h2>
+          <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "480px", margin: "0 auto 36px", lineHeight: "1.7" }}>Sign in to access the full dashboard � real-time fraud scanner, AI chatbot, payment flows, and notification center.</p>
+          <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
+            <SignInButton mode="modal">
+              <button
+                style={{ display: "inline-flex", alignItems: "center", gap: "10px", background: "linear-gradient(135deg, #10b981, #059669)", color: "white", border: "none", borderRadius: "50px", padding: "16px 40px", fontSize: "16px", fontWeight: "700", cursor: "pointer", fontFamily: "'Outfit', sans-serif", boxShadow: "0 0 40px rgba(16,185,129,0.5)", transition: "all 0.3s ease" }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = "translateY(-2px)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = "translateY(0)"; }}
+              >
+                <Sparkles size={18} /> Get Started Free <ArrowRight size={18} />
+              </button>
+            </SignInButton>
+            <a href="http://13.60.235.28:8761" target="_blank" rel="noopener noreferrer"
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50px", padding: "16px 28px", fontSize: "14px", fontWeight: "600", color: "#94a3b8", textDecoration: "none", transition: "all 0.3s ease" }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "#10b981"; e.currentTarget.style.borderColor = "rgba(16,185,129,0.4)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "#94a3b8"; e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
+            >
+              <Activity size={16} /> View Eureka Registry
+            </a>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Footer Attribution */}
-      <div style={{ textAlign: 'center', borderTop: '1px solid var(--color-border)', paddingTop: '32px' }}>
-        <p style={{ color: 'var(--color-text-secondary)', fontSize: '14px', margin: 0 }}>
-          Designed and Architected by <a href="https://github.com/pavansaiambala7" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--color-primary)', fontWeight: '700', textDecoration: 'none' }}>Pavan Sai (@pavansaiambala7)</a>
+      {/* FOOTER */}
+      <footer style={{ borderTop: "1px solid rgba(255,255,255,0.06)", padding: "32px 24px", textAlign: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px", marginBottom: "10px" }}>
+          <div style={{ width: "32px", height: "32px", background: "linear-gradient(135deg,#10b981,#059669)", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <Shield size={18} color="white" />
+          </div>
+          <span style={{ fontSize: "18px", fontWeight: "800", background: "linear-gradient(135deg,#10b981,#34d399)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SafePe</span>
+        </div>
+        <p style={{ color: "#334155", fontSize: "13px", marginBottom: "6px" }}>
+          Designed by{" "}
+          <a href="https://github.com/pavansaiambala7" target="_blank" rel="noopener noreferrer" style={{ color: "#10b981", fontWeight: "700", textDecoration: "none" }}>Pavan Sai Ambala</a>
         </p>
-        <p style={{ color: '#94a3b8', fontSize: '12px', marginTop: '6px' }}>
-          SafePe Financial Safety Platform • Spring Boot 3.2 • React 18 • Kafka KRaft • pgvector • Redis 7 • AES-256
-        </p>
-      </div>
-      
+        <p style={{ color: "#1e293b", fontSize: "11px" }}>Spring Boot 3.2 &middot; React 19 &middot; Kafka KRaft &middot; pgvector &middot; Redis 7 &middot; AES-256 &middot; AWS EC2</p>
+      </footer>
+
+      <style>{`
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+      `}</style>
     </div>
   );
 }

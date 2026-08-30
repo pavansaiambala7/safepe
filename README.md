@@ -14,7 +14,7 @@
 
 **An enterprise-grade, event-driven 5-microservice digital payment platform with pgvector RAG, Gemini AI Money Assistant, Vector DB Trust Scoring, Scheduled Bill Reminders (Kafka + SSE), and AES-256 Tokenization.**
 
-[🌐 **Live Demo Application**](https://safepe.pavansai.me) • [💻 **GitHub Repository**](https://github.com/pavansaiambala7/safepe) • [📖 **API Documentation**](#-api-specification) • [🚀 **Quick Start**](#-quick-start)
+[🌐 **Live Demo Application**](http://13.60.235.28:3000) • [💻 **GitHub Repository**](https://github.com/pavansaiambala7/safepe) • [📖 **API Documentation**](#-api-specification) • [🚀 **Quick Start**](#-quick-start)
 
 ---
 
@@ -322,4 +322,4 @@ safepe/
 ## 👨‍💻 Author
 
 Engineered by **[Pavan Sai Ambala](https://github.com/pavansaiambala7)**  
-🌐 [Live Application](https://safepe.pavansai.me) • 💼 [LinkedIn](https://linkedin.com) • 🐙 [GitHub Profile](https://github.com/pavansaiambala7)
+🌐 [Live Application](http://13.60.235.28:3000) • 💼 [LinkedIn](https://linkedin.com) • 🐙 [GitHub Profile](https://github.com/pavansaiambala7)

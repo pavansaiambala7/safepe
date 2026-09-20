@@ -22,6 +22,7 @@
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <java-jwt.version>4.4.0</java-jwt.version>
         <jwks-rsa.version>0.22.1</jwks-rsa.version>
+        <bucket4j.version>8.10.1</bucket4j.version>
     </properties>
 
     <dependencies>
@@ -53,6 +54,13 @@
             <groupId>com.auth0</groupId>
             <artifactId>jwks-rsa</artifactId>
             <version>${jwks-rsa.version}</version>
+        </dependency>
+
+        <!-- Bucket4j — Token-Bucket Rate Limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
         </dependency>
 
         <!-- Developer Productivity -->

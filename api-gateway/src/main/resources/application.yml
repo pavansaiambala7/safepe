@@ -1,5 +1,11 @@
 server:
   port: 8080
+  # Nginx terminates the client connection; without this the gateway sees the
+  # proxy IP for every caller and rate limits would be shared by all of them.
+  forward-headers-strategy: framework
+  error:
+    include-stacktrace: never
+    include-message: never
 
 spring:
   application:
@@ -11,23 +17,6 @@ spring:
         locator:
           enabled: false
           lower-case-service-id: true
-      globalcors:
-        cors-configurations:
-          '[/**]':
-            allowedOrigins:
-              - "http://localhost:3000"
-              - "http://localhost:5173"
-              - "http://127.0.0.1:3000"
-              - "http://127.0.0.1:5173"
-            allowedMethods:
-              - GET
-              - POST
-              - PUT
-              - DELETE
-              - OPTIONS
-              - PATCH
-            allowedHeaders: "*"
-            allowCredentials: true
       routes:
         # ── 1. Payment Service Routes ─────────────────────────────────────────
         - id: payment-service-payments
@@ -85,6 +74,61 @@ safepe:
   clerk:
     issuer: ${CLERK_ISSUER:https://creative-muskox-36.clerk.accounts.dev}
     jwks-url: ${CLERK_JWKS_URL:https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json}
+
+  # ── CORS ──────────────────────────────────────────────────────────────────
+  # Comma-separated. Applied by CorsConfig#corsWebFilter, NOT by globalcors.
+  # When the SPA is served by its own nginx (which proxies /api), requests are
+  # same-origin and this list only matters for direct/non-browser clients.
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,http://127.0.0.1:3000}
+
+  # ── Bucket4j Rate Limiting ────────────────────────────────────────────────
+  # capacity          = burst ceiling (tokens available when bucket is full)
+  # refill-tokens     = tokens restored per refill-period-seconds
+  # Longest matching path-prefix wins; unmatched paths use default-tier.
+  rate-limit:
+    enabled: ${RATE_LIMIT_ENABLED:true}
+    max-buckets: 50000
+    exempt-paths:
+      # Long-lived SSE connection - throttling it kills the notification bell.
+      - /api/v1/public/notifications/stream
+      - /actuator
+    default-tier:
+      capacity: 40
+      refill-tokens: 20
+      refill-period-seconds: 1
+    tiers:
+      # Gemini-backed routes: each call costs real API quota. Keep these tight.
+      - path-prefix: /api/v1/assistant
+        capacity: 3
+        refill-tokens: 1
+        refill-period-seconds: 1
+      - path-prefix: /api/v1/fraud
+        capacity: 5
+        refill-tokens: 2
+        refill-period-seconds: 1
+      # Money movement: strict, and low enough to blunt brute-force attempts.
+      - path-prefix: /api/v1/payments
+        capacity: 10
+        refill-tokens: 5
+        refill-period-seconds: 1
+      - path-prefix: /api/v1/bank
+        capacity: 10
+        refill-tokens: 5
+        refill-period-seconds: 1
+      - path-prefix: /api/v1/vault
+        capacity: 10
+        refill-tokens: 5
+        refill-period-seconds: 1
+      # Read-mostly routes: generous.
+      - path-prefix: /api/v1/history
+        capacity: 60
+        refill-tokens: 30
+        refill-period-seconds: 1
+      - path-prefix: /api/v1/bills
+        capacity: 40
+        refill-tokens: 20
+        refill-period-seconds: 1
 
 management:
   endpoints:

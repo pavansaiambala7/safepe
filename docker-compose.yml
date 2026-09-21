@@ -41,6 +41,8 @@ services:
     image: apache/kafka:3.7.0
     container_name: safepe-kafka
     environment:
+      # Kafka defaults to a 1 GB heap, which alone exceeds this host.
+      KAFKA_HEAP_OPTS: "-Xmx256m -Xms128m"
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
       # Two listeners on purpose. Containers resolve "kafka" and use :9092;
@@ -78,6 +80,11 @@ services:
     ports:
       - "8761:8761"
     environment:
+      # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
+      # which on a 1 GB box means six JVMs each believing they may take
+      # ~250 MB - a guaranteed OOM. SerialGC and TieredStopAtLevel=1 trade
+      # throughput for a markedly smaller resident set.
+      - JAVA_TOOL_OPTIONS=-Xmx96m -Xms32m -XX:MaxMetaspaceSize=96m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError
       - SERVER_PORT=8761
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost:8761/actuator/health || exit 1"]
@@ -95,6 +102,11 @@ services:
     ports:
       - "8080:8080"
     environment:
+      # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
+      # which on a 1 GB box means six JVMs each believing they may take
+      # ~250 MB - a guaranteed OOM. SerialGC and TieredStopAtLevel=1 trade
+      # throughput for a markedly smaller resident set.
+      - JAVA_TOOL_OPTIONS=-Xmx128m -Xms32m -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
       - CLERK_ISSUER=https://creative-muskox-36.clerk.accounts.dev
       - CLERK_JWKS_URL=https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json
@@ -118,6 +130,11 @@ services:
     expose:
       - "8081"
     environment:
+      # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
+      # which on a 1 GB box means six JVMs each believing they may take
+      # ~250 MB - a guaranteed OOM. SerialGC and TieredStopAtLevel=1 trade
+      # throughput for a markedly smaller resident set.
+      - JAVA_TOOL_OPTIONS=-Xmx160m -Xms32m -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-safepe_db}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-safepe_user}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -154,6 +171,11 @@ services:
     expose:
       - "8082"
     environment:
+      # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
+      # which on a 1 GB box means six JVMs each believing they may take
+      # ~250 MB - a guaranteed OOM. SerialGC and TieredStopAtLevel=1 trade
+      # throughput for a markedly smaller resident set.
+      - JAVA_TOOL_OPTIONS=-Xmx160m -Xms32m -XX:MaxMetaspaceSize=128m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-safepe_db}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-safepe_user}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
@@ -192,6 +214,11 @@ services:
     expose:
       - "8083"
     environment:
+      # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
+      # which on a 1 GB box means six JVMs each believing they may take
+      # ~250 MB - a guaranteed OOM. SerialGC and TieredStopAtLevel=1 trade
+      # throughput for a markedly smaller resident set.
+      - JAVA_TOOL_OPTIONS=-Xmx112m -Xms32m -XX:MaxMetaspaceSize=112m -Xss512k -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -XX:+ExitOnOutOfMemoryError
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
     depends_on:

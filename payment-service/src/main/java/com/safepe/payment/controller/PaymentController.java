@@ -1,12 +1,15 @@
 package com.safepe.payment.controller;
 
+import com.safepe.payment.dto.request.BankTransferRequest;
+import com.safepe.payment.dto.request.CreatePaymentRequest;
+import com.safepe.payment.dto.request.GenerateQrRequest;
 import com.safepe.payment.service.PaymentService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.math.BigDecimal;
 import java.security.Principal;
 import java.util.Map;
 
@@ -19,13 +22,11 @@ public class PaymentController {
     private final PaymentService paymentService;
 
     @PostMapping("/create")
-    public ResponseEntity<?> createOrder(@RequestBody Map<String, Object> requestData, Principal principal) {
+    public ResponseEntity<?> createOrder(@Valid @RequestBody CreatePaymentRequest request,
+                                         Principal principal) {
         String userId = principal != null ? principal.getName() : "user_123_temp";
-        String upiId = (String) requestData.get("upiId");
-        String amountStr = requestData.get("amount").toString();
-        BigDecimal amount = new BigDecimal(amountStr);
-
-        Map<String, Object> response = paymentService.createPaymentOrder(userId, upiId, amount);
+        Map<String, Object> response = paymentService.createPaymentOrder(
+                userId, request.upiId(), request.amount());
         return ResponseEntity.ok(response);
     }
 
@@ -45,25 +46,17 @@ public class PaymentController {
     }
 
     @PostMapping("/qr/generate")
-    public ResponseEntity<?> generateQrCode(@RequestBody Map<String, Object> requestData) {
-        String amountStr = requestData.get("amount").toString();
-        BigDecimal amount = new BigDecimal(amountStr);
-        String description = (String) requestData.get("description");
-
-        String qrResponse = paymentService.generateQrCode(amount, description);
+    public ResponseEntity<?> generateQrCode(@Valid @RequestBody GenerateQrRequest request) {
+        String qrResponse = paymentService.generateQrCode(
+                request.amount(), request.description());
         return ResponseEntity.ok(qrResponse);
     }
 
     @PostMapping("/bank/transfer")
-    public ResponseEntity<?> initiateBankTransfer(@RequestBody Map<String, Object> requestData) {
-        String amountStr = requestData.get("amount").toString();
-        BigDecimal amount = new BigDecimal(amountStr);
-        String beneficiaryName = (String) requestData.get("beneficiaryName");
-        String accountNumber = (String) requestData.get("accountNumber");
-        String ifscCode = (String) requestData.get("ifscCode");
-        String purpose = (String) requestData.get("purpose");
-
-        String transferResponse = paymentService.initiateBankTransfer(amount, beneficiaryName, accountNumber, ifscCode, purpose);
+    public ResponseEntity<?> initiateBankTransfer(@Valid @RequestBody BankTransferRequest request) {
+        String transferResponse = paymentService.initiateBankTransfer(
+                request.amount(), request.beneficiaryName(), request.accountNumber(),
+                request.ifscCode(), request.purpose());
         return ResponseEntity.ok(transferResponse);
     }
 }

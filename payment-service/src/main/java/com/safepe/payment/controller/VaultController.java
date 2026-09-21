@@ -2,7 +2,10 @@ package com.safepe.payment.controller;
 
 import com.safepe.payment.model.TokenizedCard;
 import com.safepe.payment.model.TokenizedUPI;
+import com.safepe.payment.dto.request.SaveCardRequest;
+import com.safepe.payment.dto.request.SaveUpiRequest;
 import com.safepe.payment.service.TokenizationService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -21,14 +24,17 @@ public class VaultController {
     private final TokenizationService tokenizationService;
 
     @PostMapping("/cards")
-    public ResponseEntity<?> saveCard(Principal principal, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> saveCard(Principal principal, @Valid @RequestBody SaveCardRequest request) {
         String userId = principal != null ? principal.getName() : "user_123_temp";
 
-        String razorpayTokenId = request.getOrDefault("razorpayTokenId", "token_" + UUID.randomUUID().toString().substring(0, 10));
+        String razorpayTokenId = request.razorpayTokenId() != null && !request.razorpayTokenId().isBlank()
+                ? request.razorpayTokenId()
+                : "token_" + UUID.randomUUID().toString().substring(0, 10);
         String razorpayCustomerId = "cust_" + userId.substring(0, Math.min(userId.length(), 10));
 
-        String cardNumber = request.getOrDefault("cardNumber", "0000");
-        String lastFour = cardNumber.length() >= 4 ? cardNumber.substring(cardNumber.length() - 4) : "0000";
+        // Validation guarantees 12-19 digits, so the last four always exist.
+        String cardNumber = request.cardNumber();
+        String lastFour = cardNumber.substring(cardNumber.length() - 4);
 
         TokenizedCard savedCard = tokenizationService.saveCardToken(
                 userId,
@@ -47,11 +53,13 @@ public class VaultController {
     }
 
     @PostMapping("/upi")
-    public ResponseEntity<?> saveUpi(Principal principal, @RequestBody Map<String, String> request) {
+    public ResponseEntity<?> saveUpi(Principal principal, @Valid @RequestBody SaveUpiRequest request) {
         String userId = principal != null ? principal.getName() : "user_123_temp";
-        String upiId = request.get("upiId");
+        String upiId = request.upiId();
 
-        String razorpayTokenId = request.getOrDefault("razorpayTokenId", "token_upi_" + UUID.randomUUID().toString().substring(0, 10));
+        String razorpayTokenId = request.razorpayTokenId() != null && !request.razorpayTokenId().isBlank()
+                ? request.razorpayTokenId()
+                : "token_upi_" + UUID.randomUUID().toString().substring(0, 10);
         String razorpayCustomerId = "cust_" + userId.substring(0, Math.min(userId.length(), 10));
 
         String maskedUpi = maskUPI(upiId);

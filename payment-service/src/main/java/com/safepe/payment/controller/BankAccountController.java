@@ -2,6 +2,11 @@ package com.safepe.payment.controller;
 
 import com.safepe.payment.model.BankAccount;
 import com.safepe.payment.repository.BankAccountRepository;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +37,7 @@ public class BankAccountController {
     }
 
     @PostMapping("/accounts")
-    public ResponseEntity<?> addAccount(Principal principal, @RequestBody AddAccountRequest request) {
+    public ResponseEntity<?> addAccount(Principal principal, @Valid @RequestBody AddAccountRequest request) {
         try {
             String userId = principal != null ? principal.getName() : "user_123_temp";
 
@@ -59,7 +64,7 @@ public class BankAccountController {
     }
 
     @PostMapping("/balance")
-    public ResponseEntity<?> checkBalance(Principal principal, @RequestBody BalanceRequest request) {
+    public ResponseEntity<?> checkBalance(Principal principal, @Valid @RequestBody BalanceRequest request) {
         String userId = principal != null ? principal.getName() : "user_123_temp";
 
         Optional<BankAccount> optionalAccount = bankAccountRepository.findByIdAndUserId(request.getAccountId(), userId);
@@ -80,14 +85,23 @@ public class BankAccountController {
 
     @Data
     public static class AddAccountRequest {
+        @NotBlank(message = "bankName is required")
+        @Size(max = 100, message = "must be at most 100 characters")
         private String bankName;
+
+        @Size(max = 100, message = "must be at most 100 characters")
         private String razorpayTokenId;
+
+        @Pattern(regexp = "^[0-9]{4}$", message = "must be exactly 4 digits")
         private String accountLastFour;
     }
 
     @Data
     public static class BalanceRequest {
+        @NotNull(message = "accountId is required")
         private UUID accountId;
+
+        @Pattern(regexp = "^[0-9]{4,6}$", message = "must be 4 to 6 digits")
         private String upiPin;
     }
 }

@@ -1,5 +1,6 @@
 package com.safepe.fraud.service.rag;
 
+import com.safepe.fraud.config.RagProperties;
 import com.safepe.fraud.model.FraudPattern;
 import com.safepe.fraud.repository.FraudPatternRepository;
 import lombok.AllArgsConstructor;
@@ -10,8 +11,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -25,34 +29,31 @@ public class VectorSearchService {
     private final RedisTemplate<String, Object> redisTemplate;
 
     private static final String CACHE_PREFIX = "safepe:rag:";
-    private static final long CACHE_TTL_SECONDS = 300; // 5 minutes
-    private static final double SIMILARITY_THRESHOLD = 0.60;
-    private static final int MAX_RESULTS = 5;
+
+    private final RagProperties ragProperties;
 
     private List<PatternWithEmbedding> patternEmbeddingCache = null;
 
     public VectorSearchService(
             GeminiEmbeddingService embeddingService,
             FraudPatternRepository fraudPatternRepository,
-            RedisTemplate<String, Object> redisTemplate) {
+            RedisTemplate<String, Object> redisTemplate,
+            RagProperties ragProperties) {
         this.embeddingService = embeddingService;
         this.fraudPatternRepository = fraudPatternRepository;
         this.redisTemplate = redisTemplate;
+        this.ragProperties = ragProperties;
     }
 
     public List<VectorSearchResult> searchSimilarPatterns(String message) {
         long startTime = System.currentTimeMillis();
-        String cacheKey = CACHE_PREFIX + message.hashCode();
+        String cacheKey = CACHE_PREFIX + cacheKeyFor(message);
 
-        try {
-            Object cached = redisTemplate.opsForValue().get(cacheKey);
-            if (cached != null && cached instanceof List) {
-                long elapsed = System.currentTimeMillis() - startTime;
-                log.info("⚡ Redis cache HIT for vector search ({} ms)", elapsed);
-                return (List<VectorSearchResult>) cached;
-            }
-        } catch (Exception e) {
-            log.debug("Redis cache unavailable, proceeding without cache: {}", e.getMessage());
+        List<VectorSearchResult> cached = readFromCache(cacheKey);
+        if (cached != null) {
+            log.info("Redis cache HIT for vector search ({} ms)",
+                    System.currentTimeMillis() - startTime);
+            return cached;
         }
 
         float[] queryEmbedding = embeddingService.generateEmbedding(message);
@@ -70,7 +71,7 @@ public class VectorSearchService {
         for (PatternWithEmbedding pwe : patternEmbeddingCache) {
             if (pwe.embedding != null) {
                 double similarity = GeminiEmbeddingService.cosineSimilarity(queryEmbedding, pwe.embedding);
-                if (similarity >= SIMILARITY_THRESHOLD) {
+                if (similarity >= ragProperties.getSimilarityThreshold()) {
                     results.add(VectorSearchResult.builder()
                             .patternId(pwe.pattern.getId().toString())
                             .patternDescription(pwe.pattern.getPatternDescription())
@@ -84,11 +85,12 @@ public class VectorSearchService {
 
         results = results.stream()
                 .sorted(Comparator.comparingDouble(VectorSearchResult::getSimilarityScore).reversed())
-                .limit(MAX_RESULTS)
+                .limit(ragProperties.getMaxResults())
                 .collect(Collectors.toList());
 
         try {
-            redisTemplate.opsForValue().set(cacheKey, results, CACHE_TTL_SECONDS, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(cacheKey, results,
+                    ragProperties.getCacheTtlSeconds(), TimeUnit.SECONDS);
         } catch (Exception e) {
             log.debug("Could not cache vector search results: {}", e.getMessage());
         }
@@ -97,6 +99,56 @@ public class VectorSearchService {
         log.info("🔍 Vector search completed in {} ms — {} matches above threshold", elapsed, results.size());
 
         return results;
+    }
+
+    /**
+     * Reads the cache without an unchecked cast.
+     * <p>
+     * The previous version did {@code return (List<VectorSearchResult>) cached;}
+     * which, because generics are erased, never threw at the cast site. A cache
+     * entry deserialized as List<LinkedHashMap> therefore escaped this method
+     * and blew up with ClassCastException in the CALLER, outside the try/catch,
+     * turning one poisoned key into a permanent 500 for that query. Validating
+     * element types here keeps the failure local and self-healing.
+     *
+     * @return the cached results, or null on a miss or an unusable entry
+     */
+    private List<VectorSearchResult> readFromCache(String cacheKey) {
+        try {
+            Object cached = redisTemplate.opsForValue().get(cacheKey);
+            if (!(cached instanceof List<?> list)) {
+                return null;
+            }
+            List<VectorSearchResult> typed = new ArrayList<>(list.size());
+            for (Object element : list) {
+                if (!(element instanceof VectorSearchResult result)) {
+                    log.warn("Discarding cache entry {} - unexpected element type {}",
+                            cacheKey, element == null ? "null" : element.getClass().getName());
+                    redisTemplate.delete(cacheKey);
+                    return null;
+                }
+                typed.add(result);
+            }
+            return typed;
+        } catch (Exception e) {
+            log.debug("Redis cache unavailable, proceeding without cache: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * SHA-256 rather than String.hashCode(): hashCode collides readily (the
+     * classic example being "FB" and "Ea"), and a collision here would serve
+     * one query the fraud patterns matched for a completely different message.
+     */
+    private String cacheKeyFor(String message) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(message.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash, 0, 16);
+        } catch (Exception e) {
+            return Integer.toHexString(message.hashCode());
+        }
     }
 
     private synchronized void loadPatternEmbeddings() {
@@ -129,7 +181,7 @@ public class VectorSearchService {
                     return desc.contains(lower) || lower.contains(desc.split(" ")[0]) ||
                            keywords.contains(lower.split(" ")[0]);
                 })
-                .limit(MAX_RESULTS)
+                .limit(ragProperties.getMaxResults())
                 .map(p -> VectorSearchResult.builder()
                         .patternId(p.getId().toString())
                         .patternDescription(p.getPatternDescription())

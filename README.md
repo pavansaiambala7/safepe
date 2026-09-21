@@ -12,7 +12,7 @@
 [![React 19](https://img.shields.io/badge/React-19-61DAFB.svg?style=flat-square&logo=react)](https://react.dev/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
 
-**An enterprise-grade, event-driven 5-microservice digital payment platform with pgvector RAG, Gemini AI Money Assistant, Vector DB Trust Scoring, Scheduled Bill Reminders (Kafka + SSE), and AES-256 Tokenization.**
+**An event-driven 5-microservice digital payment platform with Gemini-embedding RAG, an AI Money Assistant, semantic scam-pattern trust scoring, scheduled bill reminders (Kafka + SSE), and provider-tokenized card storage.**
 
 [🌐 **Live Demo Application**](http://13.60.235.28:3000) • [💻 **GitHub Repository**](https://github.com/pavansaiambala7/safepe) • [📖 **API Documentation**](#-api-specification) • [🚀 **Quick Start**](#-quick-start)
 
@@ -47,7 +47,7 @@ flowchart TB
     end
 
     subgraph ServiceLayer["⚙️ Core Distributed Microservices"]
-        PAYMENT["payment-service (:8081)\n• Razorpay Order Management\n• Scheduled Bill Sweeper (@Scheduled)\n• AES-256 Token Vault"]
+        PAYMENT["payment-service (:8081)\n• Razorpay Order Management\n• Scheduled Bill Sweeper (@Scheduled)\n• Tokenized Card Vault"]
         AI["ai-service / fraud-service (:8082)\n• Money Assistant RAG\n• Spending Insights Engine\n• SMS Scam Scanner\n• Vector DB Trust Score Reasoner"]
         NOTIF["notification-service (:8083)\n• Real-time SSE Stream\n• Payment Push Broadcasts\n• Bill Due Reminders"]
     end
@@ -59,7 +59,7 @@ flowchart TB
 
     subgraph DataLayer["💾 Persistence & Vector Storage Layer"]
         PG_PAY[("PostgreSQL\n(Payment DB + scheduled_bills)")]
-        PG_AI[("PostgreSQL + pgvector\n(Read-Model + 1536d Embeddings)")]
+        PG_AI[("PostgreSQL\n(Read-Model + Fraud Patterns)")]
         REDIS[("Redis 7\n(Vector Cache & Session Store)")]
     end
 
@@ -91,8 +91,8 @@ flowchart TB
 |---|---|---|---|---|
 | **1** | **`eureka-server`** | `8761` | Spring Cloud Netflix Eureka | Service registration, dynamic load balancing lookup, service health heartbeats. |
 | **2** | **`api-gateway`** | `8080` | Spring Cloud Gateway, Reactive WebFlux | Clerk JWKS token verification, IP token-bucket rate limiting (Bucket4j), route aggregation for payments, bills, fraud, and notifications. |
-| **3** | **`payment-service`** | `8081` | Spring Boot 3.2, JPA, Razorpay SDK | Razorpay order creation, payment signature verification, dynamic UPI QR generation, AES-256 card token vault, `@Scheduled` bill reminder sweeper. Publishes `transaction-events` & `bill-reminders`. |
-| **4** | **`fraud-service`** *(AI Service)* | `8082` | Spring Boot 3.2, pgvector, LangChain4j, Gemini | Event read-model consumer, Money Assistant (RAG over user txns), Spending Insights, SMS Scam Scanner, Vector DB Trust & Risk Evaluation Engine. |
+| **3** | **`payment-service`** | `8081` | Spring Boot 3.2, JPA, Razorpay SDK | Razorpay order creation, payment signature verification, dynamic UPI QR generation, provider-tokenized card vault, `@Scheduled` bill reminder sweeper. Publishes `transaction-events` & `bill-reminders`. |
+| **4** | **`fraud-service`** *(AI Service)* | `8082` | Spring Boot 3.2, LangChain4j, Gemini, Redis | Event read-model consumer, Money Assistant (RAG over user txns), Spending Insights, SMS Scam Scanner, Vector DB Trust & Risk Evaluation Engine. |
 | **5** | **`notification-service`** | `8083` | Spring Boot 3.2, Spring MVC SSE | Real-time Server-Sent Events (SSE) notification hub. Consumes `transaction-events` and `bill-reminders` to push instant payment receipt chimes and bill alerts to the UI. |
 
 ---
@@ -119,13 +119,14 @@ sequenceDiagram
     GEMINI-->>AI: Grounded, factual response with ₹ currency
     AI-->>User: Conversational financial guidance & category breakdown
 
-    Note over User,GEMINI: Feature 2: Scam Scanner & Trust Score (pgvector Cosine Similarity)
+    Note over User,GEMINI: Feature 2: Scam Scanner & Trust Score (in-memory cosine similarity)
     User->>GW: POST /api/v1/fraud/analyze-sms { content }
     GW->>AI: Route to VectorSearchService
-    AI->>GEMINI: Generate 1536d text-embedding vector
+    AI->>GEMINI: Generate text-embedding-004 vector
     GEMINI-->>AI: Dense Embedding Vector
-    AI->>PGV: SELECT pattern, 1 - (embedding <=> :vec) as cosine_sim
-    PGV-->>AI: Matched scam patterns (KYC phishing, electricity scam)
+    AI->>PGV: SELECT * FROM fraud_patterns (pattern text)
+    PGV-->>AI: Stored scam patterns (KYC phishing, electricity scam)
+    AI->>AI: Embed each pattern, cosine similarity in Java
     AI->>AI: Similarity >= 60% → Risk >= 75%, Trust <= 25% (BLOCK)
     AI-->>User: Structured Threat Assessment & Action Verdict
 ```
@@ -187,8 +188,12 @@ sequenceDiagram
 ## 🔒 Security & Data Protection Architecture
 
 - **Clerk JWT Verification:** Stateless cryptographic signature validation at the API Gateway using Clerk JWKS public keys.
-- **Bucket4j Token Bucket:** In-memory rate limiter (100 req/min per IP) protecting upstream endpoints against automated attacks.
-- **AES-256 GCM Tokenization Vault:** Sensitive bank accounts, card numbers, and UPI IDs are encrypted at rest using AES-256 with initialization vectors (IV) before persistence.
+- **Bucket4j Token Bucket:** In-memory token-bucket rate limiting at the gateway (`RateLimitFilter`), keyed per authenticated user and falling back to client IP. Tiered per route: Gemini-backed endpoints get 1 req/s (burst 3), payment endpoints 5 req/s (burst 10), read endpoints 30 req/s (burst 60). Returns `429` with `Retry-After` and `X-RateLimit-*` headers. The SSE stream is exempt.
+- **Uniform error contract:** Every tier returns the same `ApiError` envelope (`code`, `message`, `status`, `path`, `traceId`, `timestamp`, optional `fieldErrors`). Stack traces and raw exception messages are never returned; the `traceId` correlates the response to the full trace in the logs.
+- **Bean-validated request DTOs:** Money-moving endpoints bind to validated records (UPI id, IFSC, account-number and amount-range constraints) rather than untyped maps, so malformed input is rejected with a `400` naming the field.
+- **Provider tokenization, no PAN at rest:** Cards, UPI ids and bank accounts are stored as a Razorpay token plus the last four digits (`TokenizationService`). Full card numbers are never persisted.
+
+> **Note:** earlier revisions of this README described an "AES-256 GCM Tokenization Vault" encrypting values at rest. No such encryption was ever implemented — the vault stores provider tokens and masked identifiers, as described above. The unused `VAULT_MASTER_KEY` setting has been removed rather than left in place implying protection it did not provide.
 
 ---
 
@@ -268,23 +273,39 @@ cd safepe
 cp .env.example .env
 ```
 
-Set the required environment keys in `.env`:
+Set the required environment keys in `.env`. Compose refuses to start if any of
+these are missing — there are deliberately no fallback defaults for secrets:
 ```env
+POSTGRES_PASSWORD=pick_something_long
 RAZORPAY_KEY_ID=rzp_test_your_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_secret
+RAZORPAY_WEBHOOK_SECRET=your_razorpay_webhook_secret
 GEMINI_API_KEY=your_google_gemini_api_key
-VITE_VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key
+VITE_CLERK_PUBLISHABLE_KEY=pk_test_your_clerk_key
+
+# Only needed if the SPA is served from an origin other than the bundled nginx
+CORS_ALLOWED_ORIGINS=http://localhost:3000
 ```
+
+> `VITE_*` values are compiled into the JavaScript bundle at **image build time**,
+> not read at container start. Changing one requires
+> `docker compose build frontend`, not just a restart. The variable is
+> `VITE_CLERK_PUBLISHABLE_KEY` — earlier revisions used `VITE_VITE_...`, which
+> never reached the bundle and left the app on a "Missing Clerk Key" screen.
 
 ### 2. Run Full Stack with Docker Compose
 ```bash
-# Build and start all 5 microservices + Postgres (pgvector) + Redis + Kafka
-docker compose build --no-cache
+# Build and start all 5 microservices + Postgres + Redis + Kafka + nginx SPA
+docker compose build
 docker compose up -d
+
+# Schema is created by Flyway (db/migration/V1__init.sql in each service).
+# Hibernate runs with ddl-auto=validate and will refuse to start on drift.
 ```
 
 ### 3. Verify Health & Access
-- **Frontend SPA:** `http://localhost:3000` (or `http://localhost:5173` in Vite dev mode)
+- **Frontend SPA:** `http://localhost:3000` — served by nginx, which also reverse-proxies `/api` to the gateway, so the SPA and API share one origin (no browser CORS).
+  In Vite dev mode (`npm run dev`) it is `http://localhost:5173`, proxied by `vite.config.ts`.
 - **Eureka Service Registry:** `http://localhost:8761`
 - **Spring Cloud Gateway:** `http://localhost:8080`
 
@@ -308,7 +329,7 @@ cd frontend && npm install && npm run build
 safepe/
 ├── api-gateway/            # Spring Cloud Gateway (8080) + Clerk JWT + Rate Limiter
 ├── eureka-server/          # Netflix Eureka Service Discovery (8761)
-├── payment-service/        # Razorpay Orders, Bills Scheduler, AES-256 Vault (8081)
+├── payment-service/        # Razorpay Orders, Bills Scheduler, Token Vault (8081)
 ├── fraud-service/          # AI Service: RAG, Insights, Scam Scanner, Vector Trust (8082)
 ├── notification-service/   # Real-time Server-Sent Events (SSE) Stream (8083)
 ├── frontend/               # React 19 + TypeScript + Vite (RAG Assistant + SSE Bell)

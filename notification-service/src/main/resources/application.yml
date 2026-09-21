@@ -1,5 +1,13 @@
 server:
   port: 8083
+  # Stack traces and raw exception messages leaked internals through the
+  # default /error endpoint. GlobalExceptionHandler now owns error bodies.
+  error:
+    include-stacktrace: never
+    include-message: never
+  # Preserve the original client IP through the nginx -> gateway hops so
+  # logs attribute requests correctly.
+  forward-headers-strategy: framework
 
 spring:
   application:

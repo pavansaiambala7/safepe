@@ -4,6 +4,7 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
+import com.safepe.payment.exception.ExternalServiceException;
 import com.safepe.payment.dto.TransactionEvent;
 import com.safepe.payment.model.Transaction;
 import com.safepe.payment.repository.TransactionRepository;
@@ -88,7 +89,8 @@ public class PaymentService {
 
         } catch (RazorpayException e) {
             log.error("❌ Failed to create Razorpay Order", e);
-            throw new RuntimeException("Payment service is currently unavailable");
+            throw new ExternalServiceException(
+                    "The payment provider could not create this order. Please retry.", e);
         }
     }
 
@@ -157,7 +159,8 @@ public class PaymentService {
             return mockResponse.toString();
         } catch (Exception e) {
             log.error("❌ Failed to initiate bank transfer", e);
-            throw new RuntimeException("Bank Transfer service is currently unavailable");
+            throw new ExternalServiceException(
+                    "The bank transfer provider is unavailable. Please retry.", e);
         }
     }
 }

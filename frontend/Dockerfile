@@ -28,7 +28,12 @@ COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 80
+# 127.0.0.1, not localhost: busybox resolves localhost to ::1 first, and this
+# config listens on IPv4 only. The nginx:alpine entrypoint only adds an IPv6
+# listener when the config is its packaged default, which ours is not - so the
+# check reported the container unhealthy while it was serving traffic fine.
+# /healthz is answered by nginx itself and never touches the gateway.
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD wget -qO- http://localhost/ >/dev/null || exit 1
+    CMD wget -q --spider http://127.0.0.1/healthz || exit 1
 
 CMD ["nginx", "-g", "daemon off;"]

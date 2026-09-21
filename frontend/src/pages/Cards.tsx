@@ -46,10 +46,12 @@ export default function Cards() {
     
     try {
       const token = await getToken();
+      // Only the card number (for the last-four) and the provider token are
+      // sent. expiryDate and cvv were previously included even though the
+      // server ignores them - a CVV must never leave the client after
+      // authorisation, and sending it risked capture in proxy/access logs.
       const res = await api.post('/vault/cards', {
         cardNumber: cardNumber.replace(/\s+/g, ''), // Send without spaces
-        expiryDate: `${expiryMonth}/${expiryYear}`,
-        cvv,
         razorpayTokenId: `tok_card_${Date.now()}` // Mocking Razorpay.js
       }, {
         headers: { Authorization: `Bearer ${token}` }

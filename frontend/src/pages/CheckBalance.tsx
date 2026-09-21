@@ -58,7 +58,9 @@ export default function CheckBalance() {
       await api.post('/bank/accounts', {
         bankName: newBankName,
         razorpayTokenId: `token_bank_${Date.now()}`,
-        accountLastFour: newAccNum.length >= 4 ? newAccNum.slice(-4) : '0000'
+        // Server requires exactly 4 digits; strip any spaces or dashes the
+        // user typed rather than sending them through and getting a 400.
+        accountLastFour: (newAccNum.replace(/\D/g, '').slice(-4) || '0000').padStart(4, '0')
       }, {
         headers: { Authorization: `Bearer ${token}` }
       });

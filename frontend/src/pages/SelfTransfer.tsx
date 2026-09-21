@@ -22,8 +22,12 @@ export default function SelfTransfer() {
       // Self transfer is essentially a payout to one's own registered account
       const formData = {
         beneficiaryName: 'Self Account',
-        accountNumber: 'SELF-ACCOUNT-123',
-        ifscCode: 'SAFE000123',
+        // Placeholders for a mock payout, but they must satisfy the same
+        // server-side format rules as a real transfer: 9-18 digit account
+        // number, and an 11-character IFSC. The previous values
+        // ('SELF-ACCOUNT-123' / 'SAFE000123') matched neither.
+        accountNumber: '000000000123',
+        ifscCode: 'SAFE0000123',
         amount,
         purpose: 'self_transfer'
       };

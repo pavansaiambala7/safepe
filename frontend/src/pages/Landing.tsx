@@ -328,7 +328,7 @@ export default function Landing() {
                 Get Started Free <ArrowRight size={18} />
               </button>
             </SignInButton>
-            <a href="http://13.60.235.28:8761" target="_blank" rel="noopener noreferrer"
+            <a href={`${window.location.protocol}//${window.location.hostname}:8761`} target="_blank" rel="noopener noreferrer"
               style={{ display: "inline-flex", alignItems: "center", gap: "8px", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "50px", padding: "16px 28px", fontSize: "14px", fontWeight: "600", color: "#94a3b8", textDecoration: "none", transition: "all 0.3s ease" }}>
               <Activity size={16} /> Eureka Registry
             </a>

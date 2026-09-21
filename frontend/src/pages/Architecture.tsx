@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { 
   Server, Database, Cpu, Radio, ShieldCheck, Zap, 
   CheckCircle2, Lock, ArrowRight, Activity, 
-  ExternalLink, Layers, Bell, Volume2, Sparkles, RefreshCw
+  ExternalLink, Layers, Bell, Volume2, Sparkles, RefreshCw, Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';

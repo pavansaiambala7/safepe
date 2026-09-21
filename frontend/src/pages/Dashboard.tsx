@@ -3,7 +3,7 @@ import {
   Send, QrCode, Landmark, CreditCard,
   Smartphone, Lightbulb, Tv, Wifi,
   Wallet, History, ArrowRightLeft, ShieldCheck,
-  Cpu, Radio, Layers, Zap, Bell, ArrowRight
+  Cpu, Radio, Layers, Zap, Bell, ArrowRight, Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';

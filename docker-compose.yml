@@ -1,4 +1,3 @@
-version: '3.8'
 
 services:
   # ── Layer 3: Data & Storage (PostgreSQL with pgvector) ──────────────────────
@@ -6,15 +5,18 @@ services:
     image: pgvector/pgvector:pg15
     container_name: safepe-postgres
     environment:
-      POSTGRES_USER: safepe_user
-      POSTGRES_PASSWORD: safepe_password
-      POSTGRES_DB: safepe_db
+      POSTGRES_USER: ${POSTGRES_USER:-safepe_user}
+      # No committed default: a password baked into a public repo is not a
+      # password. Compose refuses to start until .env supplies one.
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-safepe_db}
     ports:
-      - "5432:5432"
+      # Loopback-only: reach it from the host or an SSH tunnel, not the internet.
+      - "127.0.0.1:5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U safepe_user -d safepe_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-safepe_user} -d ${POSTGRES_DB:-safepe_db}"]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,7 +26,8 @@ services:
     image: redis:7-alpine
     container_name: safepe-redis
     ports:
-      - "6379:6379"
+      # Loopback-only: reach it from the host or an SSH tunnel, not the internet.
+      - "127.0.0.1:6379:6379"
     volumes:
       - redis_data:/data
     healthcheck:
@@ -40,10 +43,16 @@ services:
     environment:
       KAFKA_NODE_ID: 1
       KAFKA_PROCESS_ROLES: broker,controller
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      # Two listeners on purpose. Containers resolve "kafka" and use :9092;
+      # tools on the host cannot resolve that name, so they get :29092
+      # advertised as localhost. Previously only PLAINTEXT://kafka:9092 was
+      # advertised, so any client outside the Docker network was handed an
+      # unresolvable broker address after connecting.
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,PLAINTEXT_HOST://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://localhost:29092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
       KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
@@ -51,7 +60,8 @@ services:
       KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
       CLUSTER_ID: 'MkU3OEVBNTcwNTJENDM2Qk'
     ports:
-      - "9092:9092"
+      # Loopback-only: reach it from the host or an SSH tunnel, not the internet.
+      - "127.0.0.1:29092:29092"
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list || exit 1"]
       interval: 10s
@@ -88,6 +98,10 @@ services:
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
       - CLERK_ISSUER=https://creative-muskox-36.clerk.accounts.dev
       - CLERK_JWKS_URL=https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json
+      # Only needed for non-browser or cross-origin clients; the SPA is
+      # same-origin because nginx proxies /api.
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      - RATE_LIMIT_ENABLED=${RATE_LIMIT_ENABLED:-true}
     depends_on:
       - eureka-server
 
@@ -97,20 +111,28 @@ services:
       context: ./payment-service
       dockerfile: Dockerfile
     container_name: safepe-payment-service
-    ports:
-      - "8081:8081"
+    # Port intentionally NOT published. These services use
+    # .anyRequest().permitAll(), so exposing them let callers reach every
+    # endpoint directly and skip the gateway JWT check and rate limits.
+    # Reachable on the compose network as payment-service:8081.
+    expose:
+      - "8081"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
-      - SPRING_DATASOURCE_USERNAME=safepe_user
-      - SPRING_DATASOURCE_PASSWORD=safepe_password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-safepe_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-safepe_user}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
+      # Schema ownership toggles. Defaults are the production settings; set
+      # HIBERNATE_DDL_AUTO=update + FLYWAY_ENABLED=false only when deliberately
+      # regenerating a migration baseline from the entities.
+      - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
+      - HIBERNATE_DDL_AUTO=${HIBERNATE_DDL_AUTO:-validate}
       - RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
-      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:-rzp_test_secret_here}
-      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:-dummy_webhook_secret}
-      - VAULT_MASTER_KEY=${VAULT_MASTER_KEY:-vF9wE2xP8sT4qU7yZ1bM5cN3kV8aH6rJ}
+      - RAZORPAY_KEY_SECRET=${RAZORPAY_KEY_SECRET:?set RAZORPAY_KEY_SECRET in .env}
+      - RAZORPAY_WEBHOOK_SECRET=${RAZORPAY_WEBHOOK_SECRET:?set RAZORPAY_WEBHOOK_SECRET in .env}
     depends_on:
       db:
         condition: service_healthy
@@ -125,19 +147,28 @@ services:
       context: ./fraud-service
       dockerfile: Dockerfile
     container_name: safepe-fraud-service
-    ports:
-      - "8082:8082"
+    # Port intentionally NOT published. These services use
+    # .anyRequest().permitAll(), so exposing them let callers reach every
+    # endpoint directly and skip the gateway JWT check and rate limits.
+    # Reachable on the compose network as fraud-service:8082.
+    expose:
+      - "8082"
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/safepe_db
-      - SPRING_DATASOURCE_USERNAME=safepe_user
-      - SPRING_DATASOURCE_PASSWORD=safepe_password
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/${POSTGRES_DB:-safepe_db}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER:-safepe_user}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=org.postgresql.Driver
       - SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT=org.hibernate.dialect.PostgreSQLDialect
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
-      - GEMINI_API_KEY=${GEMINI_API_KEY:-gemini_key_here}
+      # Schema ownership toggles. Defaults are the production settings; set
+      # HIBERNATE_DDL_AUTO=update + FLYWAY_ENABLED=false only when deliberately
+      # regenerating a migration baseline from the entities.
+      - FLYWAY_ENABLED=${FLYWAY_ENABLED:-true}
+      - HIBERNATE_DDL_AUTO=${HIBERNATE_DDL_AUTO:-validate}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:?set GEMINI_API_KEY in .env}
     depends_on:
       db:
         condition: service_healthy
@@ -154,8 +185,12 @@ services:
       context: ./notification-service
       dockerfile: Dockerfile
     container_name: safepe-notification-service
-    ports:
-      - "8083:8083"
+    # Port intentionally NOT published. These services use
+    # .anyRequest().permitAll(), so exposing them let callers reach every
+    # endpoint directly and skip the gateway JWT check and rate limits.
+    # Reachable on the compose network as notification-service:8083.
+    expose:
+      - "8083"
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:9092
       - EUREKA_SERVER_URL=http://eureka-server:8761/eureka/
@@ -170,13 +205,18 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        # Vite inlines import.meta.env at BUILD time. These were previously set
+        # under `environment:` (and misspelled VITE_VITE_*), so the compiled
+        # bundle never saw them and rendered the "Missing Clerk Key" screen.
+        # `:?` makes compose fail loudly rather than build a broken image.
+        VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY:?set VITE_CLERK_PUBLISHABLE_KEY in .env}
+        VITE_RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
     container_name: safepe-frontend
     ports:
-      - "3000:3000"
-    environment:
-      - VITE_VITE_API_URL=http://13.60.235.28:8080/api
-      - VITE_VITE_CLERK_PUBLISHABLE_KEY=${VITE_VITE_CLERK_PUBLISHABLE_KEY:-pk_test_Y2xlcmsubG9jYWw}
-      - VITE_VITE_RAZORPAY_KEY_ID=${RAZORPAY_KEY_ID:-rzp_test_T5AtiMDfqh5J2N}
+      # Nginx listens on 80 inside the container and reverse-proxies /api to
+      # api-gateway:8080, so the SPA and the API share one origin.
+      - "3000:80"
     depends_on:
       - api-gateway
 

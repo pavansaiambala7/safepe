@@ -59,7 +59,19 @@
             <artifactId>spring-kafka</artifactId>
         </dependency>
 
-        <!-- Database -->
+        <!-- Database -->        <!-- Flyway - versioned schema migrations.
+             Replaces hibernate ddl-auto=update, which mutated the production
+             schema on every boot with no record of what changed.
+             Version is managed by spring-boot-starter-parent (Flyway 9.x).
+             No flyway-database-postgresql module here: that artifact only
+             exists from Flyway 10 onward, and Boot 3.2.5 manages Flyway 9,
+             where Postgres support ships inside flyway-core. -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+
         <dependency>
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>

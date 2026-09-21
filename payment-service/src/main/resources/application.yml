@@ -1,5 +1,13 @@
 server:
   port: 8081
+  # Stack traces and raw exception messages leaked internals through the
+  # default /error endpoint. GlobalExceptionHandler now owns error bodies.
+  error:
+    include-stacktrace: never
+    include-message: never
+  # Preserve the original client IP through the nginx -> gateway hops so
+  # logs attribute requests correctly.
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -11,9 +19,20 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
 
+  # Flyway owns the schema. Each service writes its OWN history table: both
+  # services share one database, and a single default flyway_schema_history
+  # would have them overwriting each other's migration records.
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    table: flyway_schema_history_payment
+    baseline-on-migrate: true
+    baseline-version: 0
+
   jpa:
     hibernate:
-      ddl-auto: update
+      # validate, not update: Hibernate no longer reshapes production tables on
+      # boot. Override to "update" only when regenerating a migration baseline.
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     show-sql: false
     properties:
       hibernate:
@@ -41,8 +60,11 @@ safepe:
     key-secret: ${RAZORPAY_KEY_SECRET:dummy_secret}
     webhook-secret: ${RAZORPAY_WEBHOOK_SECRET:dummy_webhook_secret}
 
-  encryption:
-    master-key: ${VAULT_MASTER_KEY:vF9wE2xP8sT4qU7yZ1bM5cN3kV8aH6rJ}
+  # safepe.encryption.master-key was removed: no class in this service ever
+  # read it, so it was a real-looking secret committed to a public repo that
+  # protected nothing. Card data is handled by storing a provider token plus
+  # the last four digits (TokenizationService), not by encrypting PANs here.
+  # Re-add it alongside an actual Cipher if that changes.
 
 management:
   endpoints:

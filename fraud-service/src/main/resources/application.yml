@@ -1,5 +1,13 @@
 server:
   port: 8082
+  # Stack traces and raw exception messages leaked internals through the
+  # default /error endpoint. GlobalExceptionHandler now owns error bodies.
+  error:
+    include-stacktrace: never
+    include-message: never
+  # Preserve the original client IP through the nginx -> gateway hops so
+  # logs attribute requests correctly.
+  forward-headers-strategy: framework
 
 spring:
   application:
@@ -11,9 +19,20 @@ spring:
     password: ${SPRING_DATASOURCE_PASSWORD:password}
     driver-class-name: ${SPRING_DATASOURCE_DRIVER_CLASS_NAME:org.h2.Driver}
 
+  # Flyway owns the schema. Each service writes its OWN history table: both
+  # services share one database, and a single default flyway_schema_history
+  # would have them overwriting each other's migration records.
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    table: flyway_schema_history_fraud
+    baseline-on-migrate: true
+    baseline-version: 0
+
   jpa:
     hibernate:
-      ddl-auto: update
+      # validate, not update: Hibernate no longer reshapes production tables on
+      # boot. Override to "update" only when regenerating a migration baseline.
+      ddl-auto: ${HIBERNATE_DDL_AUTO:validate}
     show-sql: false
     properties:
       hibernate:
@@ -52,9 +71,14 @@ safepe:
     embedding-model: ${GEMINI_EMBEDDING_MODEL:text-embedding-004}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 
+  # Bound by RagProperties. These keys existed before but nothing read them -
+  # VectorSearchService hardcoded the values as constants.
   rag:
     cache-ttl-seconds: 300
-    similarity-threshold: 0.75
+    # 0.60, not the 0.75 this file used to declare. 0.60 is the value the
+    # constant actually applied, so it is what the deployed system has been
+    # tuned against; raising it here would silently drop current matches.
+    similarity-threshold: 0.60
     max-results: 5
 
 management:

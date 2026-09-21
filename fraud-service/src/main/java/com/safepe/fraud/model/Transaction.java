@@ -9,8 +9,19 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Local read model of payment activity, projected from the Kafka
+ * transaction-events topic by PaymentEventConsumer.
+ * <p>
+ * Table renamed from "transactions" to "fraud_transaction_view": that name was
+ * also mapped by payment-service with a DIFFERENT column set (it has
+ * razorpay_payment_id, this does not). Two services with ddl-auto=update
+ * pointed at one table meant whichever booted last reshaped it, and the schema
+ * depended on container start order. This service owns the projection; it does
+ * not own the source of truth.
+ */
 @Entity
-@Table(name = "transactions")
+@Table(name = "fraud_transaction_view")
 @Data
 @Builder
 @NoArgsConstructor

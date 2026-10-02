@@ -88,9 +88,15 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        // 2. Allow whitelisted public paths
+        // 2. Allow whitelisted public paths - but strip any client-sent X-User-Id.
+        //    Downstream services trust that header as the authenticated identity,
+        //    so on routes that skip JWT verification a caller could otherwise
+        //    forge it and act as any user.
         if (isPublicPath(path)) {
-            return chain.filter(exchange);
+            ServerHttpRequest stripped = request.mutate()
+                    .headers(h -> h.remove("X-User-Id"))
+                    .build();
+            return chain.filter(exchange.mutate().request(stripped).build());
         }
 
         // 3. Check for Authorization header

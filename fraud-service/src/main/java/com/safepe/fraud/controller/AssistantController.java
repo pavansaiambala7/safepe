@@ -1,6 +1,5 @@
 package com.safepe.fraud.controller;
 
-import com.safepe.fraud.service.GeminiAIService;
 import com.safepe.fraud.service.MoneyAssistantService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,25 +13,19 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class AssistantController {
 
-    private final GeminiAIService geminiAIService;
     private final MoneyAssistantService moneyAssistantService;
 
     @PostMapping("/chat")
     public ResponseEntity<?> chat(@RequestBody Map<String, String> request, Principal principal) {
         String message = request.getOrDefault("message", "");
-        String userId = request.getOrDefault("userId", principal != null ? principal.getName() : null);
-
         if (message == null || message.isBlank()) {
             return ResponseEntity.badRequest().body(Map.of("error", "message is required"));
         }
 
-        String reply;
-        if (userId != null && !userId.isBlank()) {
-            reply = moneyAssistantService.answer(userId, message);
-        } else {
-            reply = geminiAIService.chatWithAssistant(message);
-        }
-
+        // Identity comes from the gateway-verified JWT (X-User-Id -> Principal),
+        // never from the request body - otherwise any caller could read another
+        // user's transactions by sending their userId.
+        String reply = moneyAssistantService.answer(principal.getName(), message);
         return ResponseEntity.ok(Map.of("reply", reply));
     }
 }

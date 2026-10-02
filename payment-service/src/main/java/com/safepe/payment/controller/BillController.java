@@ -8,6 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.security.Principal;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -21,14 +22,15 @@ public class BillController {
     private final BillReminderScheduler scheduler;
 
     @GetMapping
-    public ResponseEntity<List<ScheduledBill>> myBills(@RequestParam String userId) {
-        return ResponseEntity.ok(billRepository.findByUserId(userId));
+    public ResponseEntity<List<ScheduledBill>> myBills(Principal principal) {
+        // Was @RequestParam userId, which let any caller list anyone's bills.
+        return ResponseEntity.ok(billRepository.findByUserId(principal.getName()));
     }
 
     @PostMapping
-    public ResponseEntity<ScheduledBill> create(@RequestBody Map<String, String> body) {
+    public ResponseEntity<ScheduledBill> create(@RequestBody Map<String, String> body, Principal principal) {
         ScheduledBill bill = ScheduledBill.builder()
-                .userId(body.getOrDefault("userId", "demo_user"))
+                .userId(principal.getName())
                 .type(body.getOrDefault("type", "CC_BILL"))
                 .payeeName(body.getOrDefault("payeeName", "Credit Card"))
                 .amount(new BigDecimal(body.getOrDefault("amount", "1000")))

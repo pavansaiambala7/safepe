@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -35,10 +36,13 @@ public class FraudCheckController {
     }
 
     @PostMapping("/agentic-analyze")
-    public ResponseEntity<AgenticFraudResult> agenticAnalyze(@RequestBody Map<String, String> request) {
+    public ResponseEntity<AgenticFraudResult> agenticAnalyze(@RequestBody Map<String, String> request,
+                                                             Principal principal) {
         String message = request.getOrDefault("message", "");
         String upiId = request.getOrDefault("upiId", null);
-        String userId = request.getOrDefault("userId", null);
+        // Velocity analysis reads this user's transactions, so it must be the
+        // authenticated user, not a value the caller chooses.
+        String userId = principal.getName();
 
         if (message.isBlank()) {
             return ResponseEntity.badRequest().build();

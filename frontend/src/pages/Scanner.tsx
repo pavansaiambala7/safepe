@@ -86,10 +86,8 @@ export default function Scanner() {
         const res = await api.post('/fraud/analyze-sms', { content: text }, { headers });
         reply = res.data.analysis || 'Analysis complete. No severe threat detected.';
       } else {
-        const response = await api.post('/assistant/chat', { 
-          message: text,
-          userId: user?.id || 'demo_user'
-        }, { headers });
+        // No userId in the body: the server takes identity from the verified JWT.
+        const response = await api.post('/assistant/chat', { message: text }, { headers });
         reply = response.data.reply || response.data.answer || "I checked your transactions and processed your request.";
       }
 

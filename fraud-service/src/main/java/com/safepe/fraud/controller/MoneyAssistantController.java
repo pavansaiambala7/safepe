@@ -5,6 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.Map;
 
 @RestController
@@ -15,12 +16,12 @@ public class MoneyAssistantController {
     private final MoneyAssistantService moneyAssistantService;
 
     @PostMapping("/money")
-    public ResponseEntity<?> money(@RequestBody Map<String, String> request) {
-        String userId = request.getOrDefault("userId", "");
+    public ResponseEntity<?> money(@RequestBody Map<String, String> request, Principal principal) {
         String question = request.getOrDefault("question", "");
-        if (userId.isBlank() || question.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("error", "userId and question are required"));
+        if (question.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "question is required"));
         }
-        return ResponseEntity.ok(Map.of("answer", moneyAssistantService.answer(userId, question)));
+        // userId from the verified Principal only; a body-supplied userId is ignored.
+        return ResponseEntity.ok(Map.of("answer", moneyAssistantService.answer(principal.getName(), question)));
     }
 }

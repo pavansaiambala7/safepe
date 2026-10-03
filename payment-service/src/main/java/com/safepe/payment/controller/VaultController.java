@@ -25,7 +25,7 @@ public class VaultController {
 
     @PostMapping("/cards")
     public ResponseEntity<?> saveCard(Principal principal, @Valid @RequestBody SaveCardRequest request) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
 
         String razorpayTokenId = request.razorpayTokenId() != null && !request.razorpayTokenId().isBlank()
                 ? request.razorpayTokenId()
@@ -54,7 +54,7 @@ public class VaultController {
 
     @PostMapping("/upi")
     public ResponseEntity<?> saveUpi(Principal principal, @Valid @RequestBody SaveUpiRequest request) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
         String upiId = request.upiId();
 
         String razorpayTokenId = request.razorpayTokenId() != null && !request.razorpayTokenId().isBlank()

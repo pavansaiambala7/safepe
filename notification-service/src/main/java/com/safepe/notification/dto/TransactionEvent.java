@@ -21,6 +21,8 @@ public class TransactionEvent implements Serializable {
     private BigDecimal amount;
     private String currency;
     private String type;
+    private String status;
     private String razorpayOrderId;
+    private String razorpayPaymentId;
     private LocalDateTime timestamp;
 }

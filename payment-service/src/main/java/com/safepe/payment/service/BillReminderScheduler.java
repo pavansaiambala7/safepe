@@ -34,8 +34,19 @@ public class BillReminderScheduler {
      * The manual demo endpoint calls it with false so it can be replayed.
      */
     public int runReminders(boolean markNotified) {
+        return sendReminders(billRepository.findByStatus("PENDING"), markNotified);
+    }
+
+    /** Replays reminders for one user's pending bills only (demo endpoint). */
+    public int runRemindersForUser(String userId) {
+        List<ScheduledBill> pending = billRepository.findByUserId(userId).stream()
+                .filter(b -> "PENDING".equals(b.getStatus()))
+                .toList();
+        return sendReminders(pending, false);
+    }
+
+    private int sendReminders(List<ScheduledBill> pending, boolean markNotified) {
         LocalDate today = LocalDate.now();
-        List<ScheduledBill> pending = billRepository.findByStatus("PENDING");
         int count = 0;
 
         for (ScheduledBill bill : pending) {

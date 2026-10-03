@@ -38,7 +38,7 @@ public class BillReminderConsumer {
             String when = e.getDaysUntilDue() == 0 ? "today"
                         : "in " + e.getDaysUntilDue() + " day" + (e.getDaysUntilDue() == 1 ? "" : "s");
 
-            sseService.broadcast(NotificationEvent.builder()
+            sseService.sendToUser(e.getUserId(), NotificationEvent.builder()
                     .id("notif-reminder-" + UUID.randomUUID().toString().substring(0, 8))
                     .type("REMINDER")
                     .title("Bill Due Soon")

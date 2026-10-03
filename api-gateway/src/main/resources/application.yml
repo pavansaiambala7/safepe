@@ -55,10 +55,11 @@ spring:
             - Path=/api/v1/assistant/**
 
         # ── 3. Notification Service Routes (SSE) ─────────────────────────────
+        # Authenticated: each stream only receives its own user's events.
         - id: notification-service-sse
           uri: lb://notification-service
           predicates:
-            - Path=/api/v1/public/notifications/**
+            - Path=/api/v1/notifications/**
 
 eureka:
   client:
@@ -91,7 +92,7 @@ safepe:
     max-buckets: 50000
     exempt-paths:
       # Long-lived SSE connection - throttling it kills the notification bell.
-      - /api/v1/public/notifications/stream
+      - /api/v1/notifications/stream
       - /actuator
     default-tier:
       capacity: 40

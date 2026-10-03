@@ -46,11 +46,16 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             "/api/health",
             "/actuator",
             "/api/v1/payments/webhook",
-            "/api/v1/public",
             "/api/v1/fraud/check",
             "/api/v1/fraud/patterns/search",
             "/api/v1/fraud/search"
     );
+
+    /**
+     * The browser's EventSource cannot set an Authorization header, so the
+     * notification stream alone may carry the JWT as a ?token= query parameter.
+     */
+    private static final String SSE_STREAM_PATH = "/api/v1/notifications/stream";
 
     public JwtAuthFilter(
             @Value("${safepe.clerk.jwks-url:https://creative-muskox-36.clerk.accounts.dev/.well-known/jwks.json}") String jwksUrl,
@@ -99,14 +104,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange.mutate().request(stripped).build());
         }
 
-        // 3. Check for Authorization header
-        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        // 3. Check for Authorization header (or ?token= on the SSE stream only)
+        String token = extractToken(request, path);
+        if (token == null) {
             log.warn("🚨 Missing or invalid Authorization header for protected route: {}", path);
             return unauthorizedResponse(exchange, "Authorization token is missing or invalid");
         }
-
-        String token = authHeader.substring(7);
 
         try {
             DecodedJWT decoded = JWT.decode(token);
@@ -120,9 +123,13 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             DecodedJWT verified = verifier.verify(token);
             String userId = verified.getSubject();
 
-            // Mutate request to attach downstream X-User-Id header
+            if (userId == null || userId.isBlank()) {
+                return unauthorizedResponse(exchange, "Token has no subject");
+            }
+
+            // Overwrite (not append) so a client-sent X-User-Id cannot ride along.
             ServerHttpRequest mutatedRequest = request.mutate()
-                    .header("X-User-Id", userId != null ? userId : "anonymous")
+                    .headers(h -> h.set("X-User-Id", userId))
                     .build();
 
             log.debug("✅ Verified token for user: {} on path: {}", userId, path);
@@ -132,6 +139,20 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             log.warn("🚨 JWT verification failed for path {}: {}", path, e.getMessage());
             return unauthorizedResponse(exchange, "Invalid or expired token");
         }
+    }
+
+    private static String extractToken(ServerHttpRequest request, String path) {
+        String authHeader = request.getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        if (path.equals(SSE_STREAM_PATH)) {
+            String queryToken = request.getQueryParams().getFirst("token");
+            if (queryToken != null && !queryToken.isBlank()) {
+                return queryToken;
+            }
+        }
+        return null;
     }
 
     private boolean isPublicPath(String path) {

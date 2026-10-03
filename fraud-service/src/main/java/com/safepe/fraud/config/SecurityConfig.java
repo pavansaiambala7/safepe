@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -13,6 +14,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -29,8 +31,16 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .anyRequest().permitAll()
+                        // Paths the gateway lets through without a JWT.
+                        .requestMatchers("/api/health", "/actuator/**", "/error",
+                                "/api/v1/fraud/patterns/search").permitAll()
+                        // Everything else needs the X-User-Id the gateway sets
+                        // after verifying the JWT. A missing header used to
+                        // fall back to one shared placeholder identity.
+                        .anyRequest().authenticated()
                 )
+                .exceptionHandling(e -> e.authenticationEntryPoint(
+                        new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .addFilterBefore(new GatewayUserHeaderFilter(), UsernamePasswordAuthenticationFilter.class)
                 .build();
     }
@@ -41,12 +51,11 @@ public class SecurityConfig {
                                         HttpServletResponse response,
                                         FilterChain filterChain) throws ServletException, IOException {
             String userId = request.getHeader("X-User-Id");
-            if (userId == null || userId.isBlank()) {
-                userId = "user_123_temp";
+            if (userId != null && !userId.isBlank()) {
+                var auth = new UsernamePasswordAuthenticationToken(
+                        userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
+                SecurityContextHolder.getContext().setAuthentication(auth);
             }
-            var auth = new UsernamePasswordAuthenticationToken(
-                    userId, null, List.of(new SimpleGrantedAuthority("ROLE_USER")));
-            SecurityContextHolder.getContext().setAuthentication(auth);
             filterChain.doFilter(request, response);
         }
     }

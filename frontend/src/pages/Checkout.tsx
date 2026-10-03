@@ -72,8 +72,11 @@ export default function Checkout() {
 
             setStatus('success');
           } catch (verifyError) {
+            // Do not report success for a payment the server could not verify.
             console.error("Payment verification failed", verifyError);
-            setStatus('success');
+            setStatus('idle');
+            setValidationError('Payment could not be verified. If money was debited, contact support with reference ' +
+              (response.razorpay_payment_id || orderId) + '.');
           }
         },
         modal: {

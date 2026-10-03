@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useAuth } from '@clerk/react';
 import { audioAlerts } from '../utils/audioAlert';
 
 export type NotificationType = 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'REFUND_INITIATED' | 'SECURITY' | 'REMINDER';
@@ -135,6 +136,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => audioAlerts.isEnabled());
   const [sseConnected, setSseConnected] = useState(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const { getToken, isSignedIn } = useAuth();
 
   useEffect(() => {
     localStorage.setItem('safepe_notifications', JSON.stringify(notifications));
@@ -142,17 +144,29 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   // ── SSE Connection to Backend Kafka Notification Stream ──────────────
   useEffect(() => {
+    // The stream is per-user, so it needs a signed-in identity.
+    if (!isSignedIn) return;
+
     let retryTimer: ReturnType<typeof setTimeout>;
     let retryCount = 0;
+    let cancelled = false;
     const MAX_RETRIES = 10;
 
-    const connectSSE = () => {
+    const connectSSE = async () => {
       // Close existing connection if any
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
       }
 
-      const eventSource = new EventSource('/api/v1/public/notifications/stream');
+      // EventSource cannot send an Authorization header, so the gateway
+      // accepts the JWT as ?token= on this one path. Clerk tokens are
+      // short-lived, so fetch a fresh one on every (re)connect.
+      const token = await getToken();
+      if (cancelled || !token) return;
+
+      const eventSource = new EventSource(
+        `/api/v1/notifications/stream?token=${encodeURIComponent(token)}`
+      );
       eventSourceRef.current = eventSource;
 
       eventSource.addEventListener('connected', () => {
@@ -215,6 +229,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     connectSSE();
 
     return () => {
+      cancelled = true;
       clearTimeout(retryTimer);
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
@@ -222,7 +237,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSignedIn]);
 
   const toggleSound = () => {
     const newState = audioAlerts.toggleSound();

@@ -30,8 +30,11 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final PaymentEventProducer paymentEventProducer;
 
-    @Value("${safepe.razorpay.webhook-secret:dummy_webhook_secret}")
-    private String webhookSecret;
+    // Checkout signatures (razorpay_order_id|razorpay_payment_id) are HMAC'd
+    // with the API key secret. The webhook secret only signs server-to-server
+    // webhook bodies; using it here failed every real payment.
+    @Value("${safepe.razorpay.key-secret:dummy_secret}")
+    private String keySecret;
 
     @Value("${safepe.razorpay.key-id:rzp_test_T5AtiMDfqh5J2N}")
     private String keyId;
@@ -62,22 +65,8 @@ public class PaymentService {
 
             transactionRepository.save(transaction);
 
-            // ── Publish to Kafka (async read-model + notifications) ──────────
-            try {
-                TransactionEvent event = TransactionEvent.builder()
-                        .transactionId(transaction.getId())
-                        .userId(userId)
-                        .upiId(upiId)
-                        .amount(amount)
-                        .currency("INR")
-                        .type("UPI")
-                        .razorpayOrderId(orderId)
-                        .timestamp(LocalDateTime.now())
-                        .build();
-                paymentEventProducer.publishTransactionEvent(event);
-            } catch (Exception kafkaEx) {
-                log.warn("⚠️ Kafka event publishing failed (non-blocking): {}", kafkaEx.getMessage());
-            }
+            // No Kafka event yet: the user has not paid. The event is published
+            // from verifyPaymentSignature once Razorpay confirms the payment.
 
             Map<String, Object> response = new HashMap<>();
             response.put("orderId", orderId);
@@ -104,7 +93,7 @@ public class PaymentService {
             options.put("razorpay_payment_id", paymentId);
             options.put("razorpay_signature", signature);
 
-            boolean isVerified = Utils.verifyPaymentSignature(options, webhookSecret);
+            boolean isVerified = Utils.verifyPaymentSignature(options, keySecret);
 
             if (isVerified) {
                 log.info("Payment Verified Successfully!");
@@ -114,6 +103,7 @@ public class PaymentService {
                     tx.setStatus("SUCCESS");
                     tx.setRazorpayPaymentId(paymentId);
                     transactionRepository.save(tx);
+                    publishSuccessEvent(tx);
                 }
                 return true;
             } else {
@@ -123,6 +113,25 @@ public class PaymentService {
         } catch (RazorpayException e) {
             log.error("❌ Error verifying signature", e);
             return false;
+        }
+    }
+
+    private void publishSuccessEvent(Transaction tx) {
+        try {
+            paymentEventProducer.publishTransactionEvent(TransactionEvent.builder()
+                    .transactionId(tx.getId())
+                    .userId(tx.getUserId())
+                    .upiId(tx.getPayeeUpi())
+                    .amount(tx.getAmount())
+                    .currency("INR")
+                    .type(tx.getType())
+                    .status("SUCCESS")
+                    .razorpayOrderId(tx.getRazorpayOrderId())
+                    .razorpayPaymentId(tx.getRazorpayPaymentId())
+                    .timestamp(LocalDateTime.now())
+                    .build());
+        } catch (Exception kafkaEx) {
+            log.warn("⚠️ Kafka event publishing failed (non-blocking): {}", kafkaEx.getMessage());
         }
     }
 
@@ -142,7 +151,10 @@ public class PaymentService {
             return qr.toString();
         } catch (RazorpayException e) {
             log.error("❌ Failed to generate QR Code", e);
-            return "{\"id\":\"qr_" + System.currentTimeMillis() + "\",\"image_url\":\"https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg\"}";
+            // Previously returned a Wikipedia sample QR here, which a user could
+            // mistake for a real payment code. Fail visibly instead.
+            throw new ExternalServiceException(
+                    "The payment provider could not generate a QR code. Please retry.", e);
         }
     }
 
@@ -156,6 +168,8 @@ public class PaymentService {
             mockResponse.put("amount", amount.multiply(new BigDecimal("100")).longValue());
             mockResponse.put("beneficiary_name", beneficiaryName);
             mockResponse.put("account_number", accountNumber);
+            // No payout provider is wired up: nothing is actually transferred.
+            mockResponse.put("simulated", true);
             return mockResponse.toString();
         } catch (Exception e) {
             log.error("❌ Failed to initiate bank transfer", e);

@@ -13,6 +13,7 @@ export default function BankTransfer() {
   });
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [simulated, setSimulated] = useState(false);
   const { getToken } = useAuth();
 
   const handleTransfer = async () => {
@@ -23,8 +24,9 @@ export default function BankTransfer() {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
-      await api.post('/payments/bank/transfer', formData, { headers });
-      
+      const res = await api.post('/payments/bank/transfer', formData, { headers });
+      const data = typeof res.data === 'string' ? JSON.parse(res.data) : res.data;
+      setSimulated(Boolean(data?.simulated));
       setStatus('success');
     } catch (error) {
       console.error("Bank transfer failed", error);
@@ -38,9 +40,11 @@ export default function BankTransfer() {
     return (
       <div className="surface-panel" style={{ maxWidth: '600px', margin: '0 auto', textAlign: 'center', padding: '40px 20px' }}>
         <CheckCircle size={64} className="status-safe" style={{ margin: '0 auto 24px auto' }} />
-        <h2 style={{ color: 'var(--color-accent)' }}>Transfer Initiated!</h2>
+        <h2 style={{ color: 'var(--color-accent)' }}>{simulated ? 'Transfer Simulated' : 'Transfer Initiated!'}</h2>
         <p style={{ color: 'var(--color-text-secondary)', marginTop: '8px' }}>
-          ₹{formData.amount} is being transferred to {formData.beneficiaryName} via IMPS.
+          {simulated
+            ? `Demo mode: no money was moved. A real transfer of ₹${formData.amount} to ${formData.beneficiaryName} needs a payout provider.`
+            : `₹${formData.amount} is being transferred to ${formData.beneficiaryName} via IMPS.`}
         </p>
         <button className="btn-primary" style={{ marginTop: '32px' }} onClick={() => setStatus('idle')}>
           Make Another Transfer

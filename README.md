@@ -64,7 +64,7 @@ flowchart TB
     end
 
     UI -->|"HTTPS REST / Clerk JWT"| GW
-    UI <-->|"SSE: /api/v1/public/notifications/stream"| GW
+    UI <-->|"SSE: /api/v1/notifications/stream (per-user)"| GW
     
     GW -->|"lb://payment-service"| PAYMENT
     GW -->|"lb://fraud-service"| AI
@@ -248,11 +248,12 @@ curl -X POST http://localhost:8080/api/v1/fraud/analyze-sms \
   -d '{"content": "Dear customer, your electricity power will be disconnected tonight. Call 9876543210 immediately."}'
 ```
 
-### Notification Service (`/api/v1/public/notifications/**`)
+### Notification Service (`/api/v1/notifications/**`)
 
 ```bash
-# Subscribe to live SSE event stream
-curl -N http://localhost:8080/api/v1/public/notifications/stream
+# Subscribe to your own live SSE event stream. EventSource cannot send
+# headers, so this one path also accepts the Clerk JWT as ?token=.
+curl -N "http://localhost:8080/api/v1/notifications/stream?token=$CLERK_JWT"
 ```
 
 ---

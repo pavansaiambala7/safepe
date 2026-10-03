@@ -24,7 +24,7 @@ public class PaymentController {
     @PostMapping("/create")
     public ResponseEntity<?> createOrder(@Valid @RequestBody CreatePaymentRequest request,
                                          Principal principal) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
         Map<String, Object> response = paymentService.createPaymentOrder(
                 userId, request.upiId(), request.amount());
         return ResponseEntity.ok(response);

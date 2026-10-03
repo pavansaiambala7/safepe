@@ -31,7 +31,7 @@ public class BankAccountController {
 
     @GetMapping("/accounts")
     public ResponseEntity<List<BankAccount>> getAccounts(Principal principal) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
         List<BankAccount> accounts = bankAccountRepository.findByUserIdOrderByCreatedAtDesc(userId);
         return ResponseEntity.ok(accounts);
     }
@@ -39,7 +39,7 @@ public class BankAccountController {
     @PostMapping("/accounts")
     public ResponseEntity<?> addAccount(Principal principal, @Valid @RequestBody AddAccountRequest request) {
         try {
-            String userId = principal != null ? principal.getName() : "user_123_temp";
+            String userId = principal.getName();
 
             log.info("📥 Adding bank account for user {}: bank={}, lastFour={}",
                     userId, request.getBankName(), request.getAccountLastFour());
@@ -65,7 +65,7 @@ public class BankAccountController {
 
     @PostMapping("/balance")
     public ResponseEntity<?> checkBalance(Principal principal, @Valid @RequestBody BalanceRequest request) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
 
         Optional<BankAccount> optionalAccount = bankAccountRepository.findByIdAndUserId(request.getAccountId(), userId);
 

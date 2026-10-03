@@ -20,7 +20,7 @@ public class HistoryController {
 
     @GetMapping("/transactions")
     public ResponseEntity<List<Transaction>> getRecentTransactions(Principal principal) {
-        String userId = principal != null ? principal.getName() : "user_123_temp";
+        String userId = principal.getName();
         List<Transaction> transactions = transactionRepository.findRecentByUserId(userId);
         return ResponseEntity.ok(transactions);
     }

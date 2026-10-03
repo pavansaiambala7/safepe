@@ -10,6 +10,7 @@ export default function QrGenerator() {
   const [qrCodeHtml, setQrCodeHtml] = useState<string | null>(null);
   const [qrId, setQrId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { getToken } = useAuth();
 
   const handleGenerate = async () => {
@@ -18,6 +19,7 @@ export default function QrGenerator() {
     setLoading(true);
     setQrCodeHtml(null);
     setQrId(null);
+    setError(null);
     try {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
@@ -32,9 +34,8 @@ export default function QrGenerator() {
       setQrCodeHtml(data.image_url);
     } catch (error) {
       console.error("Failed to generate QR", error);
-      // Fallback for demo if backend key lacks QR capabilities
-      setQrId('qr_demo_123');
-      setQrCodeHtml('https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg');
+      // No placeholder QR: a sample image could be mistaken for a real code.
+      setError('Could not generate a QR code right now. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -93,6 +94,9 @@ export default function QrGenerator() {
               <>Generate QR Code <QrCode size={20} /></>
             )}
           </button>
+          {error && (
+            <p style={{ color: 'var(--color-danger, #ef4444)', marginTop: '12px', fontSize: '14px' }}>{error}</p>
+          )}
         </div>
       ) : (
         <div className="animate-fade-up">

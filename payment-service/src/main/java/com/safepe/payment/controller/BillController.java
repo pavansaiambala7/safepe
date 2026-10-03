@@ -1,5 +1,6 @@
 package com.safepe.payment.controller;
 
+import com.safepe.payment.config.ScheduledBillSeeder;
 import com.safepe.payment.model.ScheduledBill;
 import com.safepe.payment.repository.ScheduledBillRepository;
 import com.safepe.payment.service.BillReminderScheduler;
@@ -20,6 +21,7 @@ public class BillController {
 
     private final ScheduledBillRepository billRepository;
     private final BillReminderScheduler scheduler;
+    private final ScheduledBillSeeder seeder;
 
     @GetMapping
     public ResponseEntity<List<ScheduledBill>> myBills(Principal principal) {
@@ -40,10 +42,18 @@ public class BillController {
         return ResponseEntity.ok(billRepository.save(bill));
     }
 
-    /** Demo trigger — publishes reminders for all due bills WITHOUT marking them notified, so it's replayable. */
+    /**
+     * Demo trigger — publishes reminders for the caller's due bills WITHOUT
+     * marking them notified, so it's replayable. Reminders are now delivered
+     * only to the bill's owner, so a user with no bills gets the demo set.
+     */
     @PostMapping("/run-reminders")
-    public ResponseEntity<?> runNow() {
-        int sent = scheduler.runReminders(false);
+    public ResponseEntity<?> runNow(Principal principal) {
+        String userId = principal.getName();
+        if (billRepository.findByUserId(userId).isEmpty()) {
+            seeder.seedFor(userId);
+        }
+        int sent = scheduler.runRemindersForUser(userId);
         return ResponseEntity.ok(Map.of("remindersSent", sent));
     }
 }

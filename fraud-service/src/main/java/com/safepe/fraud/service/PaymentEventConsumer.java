@@ -23,6 +23,12 @@ public class PaymentEventConsumer {
     public void consume(String message) {
         try {
             TransactionEvent e = objectMapper.readValue(message, TransactionEvent.class);
+            // payment-service only publishes after signature verification, but
+            // guard anyway so an unpaid order never lands in spending insights.
+            if (!"SUCCESS".equals(e.getStatus())) {
+                log.debug("Skipping non-SUCCESS txn {} (status={})", e.getTransactionId(), e.getStatus());
+                return;
+            }
             Transaction t = Transaction.builder()
                     .id(e.getTransactionId())
                     .userId(e.getUserId())
@@ -30,7 +36,7 @@ public class PaymentEventConsumer {
                     .amount(e.getAmount())
                     .currency(e.getCurrency() != null ? e.getCurrency() : "INR")
                     .type(e.getType() != null ? e.getType() : "UPI")
-                    .status("SUCCESS")
+                    .status(e.getStatus())
                     .razorpayOrderId(e.getRazorpayOrderId())
                     .build();
             transactionRepository.save(t);

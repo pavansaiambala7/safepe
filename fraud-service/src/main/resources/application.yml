@@ -46,7 +46,9 @@ spring:
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
     consumer:
-      group-id: safepe-fraud-detection-group
+      # Matches the @KafkaListener groupId in PaymentEventConsumer, which
+      # overrides this anyway; kept in sync so the config does not mislead.
+      group-id: safepe-ai-readmodel-group
       auto-offset-reset: earliest
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer

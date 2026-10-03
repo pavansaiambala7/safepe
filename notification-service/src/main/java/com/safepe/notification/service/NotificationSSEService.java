@@ -11,13 +11,20 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 @Service
 @Slf4j
 public class NotificationSSEService {
 
-    private final List<SseEmitter> emitters = new CopyOnWriteArrayList<>();
+    /**
+     * Open streams keyed by the gateway-verified user ID. Events used to be
+     * broadcast to every connected browser, so any visitor saw every user's
+     * payment amounts and UPI IDs.
+     */
+    private final Map<String, List<SseEmitter>> emittersByUser = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper;
 
     public NotificationSSEService() {
@@ -26,11 +33,14 @@ public class NotificationSSEService {
         this.objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
     }
 
-    public SseEmitter subscribe() {
+    public SseEmitter subscribe(String userId) {
         SseEmitter emitter = new SseEmitter(30 * 60 * 1000L); // 30 min timeout
 
-        emitters.add(emitter);
-        log.info("🔔 New SSE subscriber connected. Total active: {}", emitters.size());
+        List<SseEmitter> userEmitters =
+                emittersByUser.computeIfAbsent(userId, k -> new CopyOnWriteArrayList<>());
+        userEmitters.add(emitter);
+        log.info("🔔 New SSE subscriber connected for user {}. Total active: {}",
+                userId, getActiveSubscriberCount());
 
         try {
             emitter.send(SseEmitter.event()
@@ -41,32 +51,45 @@ public class NotificationSSEService {
         }
 
         emitter.onCompletion(() -> {
-            emitters.remove(emitter);
-            log.info("📡 SSE subscriber disconnected (completion). Active: {}", emitters.size());
+            remove(userId, emitter);
+            log.info("📡 SSE subscriber disconnected (completion). Active: {}", getActiveSubscriberCount());
         });
         emitter.onTimeout(() -> {
-            emitters.remove(emitter);
-            log.info("📡 SSE subscriber disconnected (timeout). Active: {}", emitters.size());
+            remove(userId, emitter);
+            log.info("📡 SSE subscriber disconnected (timeout). Active: {}", getActiveSubscriberCount());
         });
         emitter.onError(e -> {
-            emitters.remove(emitter);
-            log.debug("📡 SSE subscriber disconnected (error). Active: {}", emitters.size());
+            remove(userId, emitter);
+            log.debug("📡 SSE subscriber disconnected (error). Active: {}", getActiveSubscriberCount());
         });
 
         return emitter;
     }
 
-    public void broadcast(NotificationEvent event) {
-        if (emitters.isEmpty()) {
-            log.debug("No SSE subscribers — skipping broadcast for: {}", event.getType());
+    private void remove(String userId, SseEmitter emitter) {
+        emittersByUser.computeIfPresent(userId, (k, list) -> {
+            list.remove(emitter);
+            return list.isEmpty() ? null : list;
+        });
+    }
+
+    /** Sends the event only to the streams opened by {@code userId}. */
+    public void sendToUser(String userId, NotificationEvent event) {
+        if (userId == null) {
+            log.warn("Dropping {} notification with no userId", event.getType());
+            return;
+        }
+        List<SseEmitter> emitters = emittersByUser.get(userId);
+        if (emitters == null || emitters.isEmpty()) {
+            log.debug("No SSE subscribers for user {} — skipping {}", userId, event.getType());
             return;
         }
 
         try {
             String jsonPayload = objectMapper.writeValueAsString(event);
 
-            log.info("📢 Broadcasting {} notification to {} subscriber(s): {}",
-                    event.getType(), emitters.size(), event.getTitle());
+            log.info("📢 Sending {} notification to {} stream(s) of user {}: {}",
+                    event.getType(), emitters.size(), userId, event.getTitle());
 
             List<SseEmitter> deadEmitters = new ArrayList<>();
 
@@ -81,16 +104,16 @@ public class NotificationSSEService {
             }
 
             if (!deadEmitters.isEmpty()) {
-                emitters.removeAll(deadEmitters);
+                deadEmitters.forEach(dead -> remove(userId, dead));
                 log.debug("Cleaned up {} dead SSE emitters", deadEmitters.size());
             }
 
         } catch (Exception e) {
-            log.error("❌ Failed to broadcast SSE notification: {}", e.getMessage());
+            log.error("❌ Failed to send SSE notification: {}", e.getMessage());
         }
     }
 
     public int getActiveSubscriberCount() {
-        return emitters.size();
+        return emittersByUser.values().stream().mapToInt(List::size).sum();
     }
 }

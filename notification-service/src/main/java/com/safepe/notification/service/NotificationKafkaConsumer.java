@@ -42,12 +42,19 @@ public class NotificationKafkaConsumer {
             log.info("🔔 Received TransactionEvent from Kafka: txn={}, amount={}, upi={}",
                     event.getTransactionId(), event.getAmount(), event.getUpiId());
 
+            // payment-service only publishes after verification; never announce
+            // success for anything else.
+            if (!"SUCCESS".equals(event.getStatus())) {
+                log.debug("Skipping non-SUCCESS txn {} (status={})", event.getTransactionId(), event.getStatus());
+                return;
+            }
+
             String upiId = event.getUpiId() != null ? event.getUpiId() : "unknown";
             String amount = event.getAmount() != null ? "₹" + event.getAmount() : "₹0";
             String txnId = event.getTransactionId() != null ? event.getTransactionId().toString() : "unknown";
 
             // Payment success notification
-            notificationSSEService.broadcast(NotificationEvent.builder()
+            notificationSSEService.sendToUser(event.getUserId(), NotificationEvent.builder()
                     .id("notif-payment-" + UUID.randomUUID().toString().substring(0, 8))
                     .type("SUCCESS")
                     .title("Payment Successful")

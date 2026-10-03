@@ -78,7 +78,9 @@ services:
       dockerfile: Dockerfile
     container_name: safepe-eureka-server
     ports:
-      - "8761:8761"
+      # Loopback-only: the registry dashboard lists every service's internal
+      # address and has no auth. Reach it via SSH tunnel.
+      - "127.0.0.1:8761:8761"
     environment:
       # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
       # which on a 1 GB box means six JVMs each believing they may take
@@ -100,7 +102,10 @@ services:
       dockerfile: Dockerfile
     container_name: safepe-api-gateway
     ports:
-      - "8080:8080"
+      # Loopback-only. Browsers reach the gateway through the frontend nginx
+      # on :3000 (same compose network); publishing 8080 publicly offered a
+      # second, plain-HTTP entry point. Kept on loopback for local tools.
+      - "127.0.0.1:8080:8080"
     environment:
       # Small-footprint JVM tuning. Default heap is 1/4 of host RAM per JVM,
       # which on a 1 GB box means six JVMs each believing they may take

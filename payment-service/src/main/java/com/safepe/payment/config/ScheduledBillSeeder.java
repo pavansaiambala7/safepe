@@ -25,15 +25,20 @@ public class ScheduledBillSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) {
         if (billRepository.count() > 0) return;
+        seedFor(demoUserId);
+    }
+
+    /** Saves the three demo bills (due in 1-3 days) for the given user. */
+    public void seedFor(String userId) {
         LocalDate today = LocalDate.now();
         billRepository.saveAll(List.of(
-            ScheduledBill.builder().userId(demoUserId).type("CC_BILL").payeeName("HDFC Credit Card")
+            ScheduledBill.builder().userId(userId).type("CC_BILL").payeeName("HDFC Credit Card")
                 .amount(new BigDecimal("12300")).dueDate(today.plusDays(3)).status("PENDING").build(),
-            ScheduledBill.builder().userId(demoUserId).type("EMI").payeeName("Bajaj Finserv EMI")
+            ScheduledBill.builder().userId(userId).type("EMI").payeeName("Bajaj Finserv EMI")
                 .amount(new BigDecimal("4500")).dueDate(today.plusDays(2)).status("PENDING").build(),
-            ScheduledBill.builder().userId(demoUserId).type("RECHARGE").payeeName("Airtel Prepaid")
+            ScheduledBill.builder().userId(userId).type("RECHARGE").payeeName("Airtel Prepaid")
                 .amount(new BigDecimal("299")).dueDate(today.plusDays(1)).status("PENDING").build()
         ));
-        log.info("🌱 Seeded 3 demo scheduled bills for user {}", demoUserId);
+        log.info("🌱 Seeded 3 demo scheduled bills for user {}", userId);
     }
 }

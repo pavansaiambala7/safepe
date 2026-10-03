@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { 
   Server, Database, Cpu, Radio, ShieldCheck, Zap, 
-  CheckCircle2, Lock, ArrowRight, Activity, 
-  ExternalLink, Layers, Bell, Volume2, Sparkles, RefreshCw, Bot
+  CheckCircle2, Layers, Bell, RefreshCw, Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useNotifications } from '../context/NotificationContext';
@@ -11,7 +10,7 @@ export default function Architecture() {
   const [selectedService, setSelectedService] = useState<number>(0);
   const [cacheBenchmarkActive, setCacheBenchmarkActive] = useState(false);
   const [benchmarkResult, setBenchmarkResult] = useState<{ uncached: number; cached: number } | null>(null);
-  const { simulateSuccess, simulateFraudAndRefund } = useNotifications();
+  const { simulateSuccess } = useNotifications();
 
   const services = [
     {

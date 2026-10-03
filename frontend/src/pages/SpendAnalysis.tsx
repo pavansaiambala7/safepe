@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { PieChart, TrendingDown, Sparkles, Plus, ArrowRight, Bot, ShieldCheck, Wallet } from 'lucide-react';
+import { PieChart, TrendingDown, Sparkles, Plus, Bot } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '@clerk/react';
 import api from '../api';
@@ -7,7 +7,7 @@ import api from '../api';
 export default function SpendAnalysis() {
   const { getToken } = useAuth();
   const [hasSpends, setHasSpends] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
   const [narrative, setNarrative] = useState<string>('');
   const [totalSpent, setTotalSpent] = useState<string>("14,500");
   const [activeCategory, setActiveCategory] = useState({ name: 'Food & Dining', percent: 60 });

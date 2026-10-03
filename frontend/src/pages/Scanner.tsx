@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Bot, Send, Sparkles, Loader2, ShieldAlert, ShieldCheck, CheckCircle2, DollarSign, Wallet, AlertTriangle, MessageSquare, ArrowRight, RefreshCw, Zap } from 'lucide-react';
+import { Bot, Send, Sparkles, Loader2, ShieldAlert, CheckCircle2, DollarSign, Zap } from 'lucide-react';
 import { useAuth, useUser } from '@clerk/react';
 import api from '../api';
 

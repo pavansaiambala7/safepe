@@ -21,7 +21,7 @@ export default function ScanQrCamera() {
           setScanResult(decodedText);
           scanner.clear();
         },
-        (error) => {
+        () => {
           // parse errors are normal (e.g. no qr code currently in frame)
         }
       );

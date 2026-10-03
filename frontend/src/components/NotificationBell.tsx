@@ -12,9 +12,6 @@ import {
   Trash2,
   CheckCheck,
   Zap,
-  AlertTriangle,
-  ExternalLink,
-  Info,
   Volume2,
   VolumeX,
   Hourglass,
@@ -22,7 +19,7 @@ import {
   WifiOff
 } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
-import type { NotificationItem, NotificationType } from '../context/NotificationContext';
+import type { NotificationType } from '../context/NotificationContext';
 
 export default function NotificationBell() {
   const {

@@ -2,8 +2,7 @@
 import {
   ShieldCheck, Lock, Zap, GitFork, Server,
   Radio, Database, Bell, ArrowRight, Activity,
-  ChevronRight, Shield, Cpu, CreditCard, Search, BarChart3
-} from "lucide-react";
+  ChevronRight, Shield, Cpu, CreditCard, Search } from "lucide-react";
 import { SignInButton } from "@clerk/react";
 
 function Counter({ target, suffix }: { target: number; suffix?: string }) {

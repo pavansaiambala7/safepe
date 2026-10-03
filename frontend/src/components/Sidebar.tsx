@@ -2,11 +2,9 @@ import { Link } from 'react-router-dom';
 import { 
   Receipt, 
   PieChart, 
-  Send, 
   TrendingUp, 
   X,
   Home,
-  Brain,
   Radio,
   GitFork,
   Bot

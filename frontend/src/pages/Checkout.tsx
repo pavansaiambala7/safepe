@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, CheckCircle, ShieldAlert, ArrowRight, Loader2 } from 'lucide-react';
+import { CreditCard, CheckCircle, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '@clerk/react';
 import api from '../api';
 import { useNotifications } from '../context/NotificationContext';

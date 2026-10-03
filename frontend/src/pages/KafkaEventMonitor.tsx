@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Radio, Activity, AlertTriangle, CheckCircle, XCircle, RefreshCw, Zap, Clock } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 

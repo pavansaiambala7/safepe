@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { ClerkProvider, SignInButton, UserButton, useAuth } from '@clerk/react';
-import { ShieldCheck, UserCircle, Menu } from 'lucide-react';
+import { ShieldCheck, UserCircle } from 'lucide-react';
 import './index.css';
 
 import Dashboard from './pages/Dashboard';

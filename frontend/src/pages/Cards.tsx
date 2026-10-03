@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { CreditCard, PlusCircle, X, Eye, EyeOff, Trash2 } from 'lucide-react';
+import { CreditCard, PlusCircle, X, Trash2 } from 'lucide-react';
 import { useAuth } from '@clerk/react';
 import api from '../api';
 
@@ -14,7 +14,6 @@ interface SavedCard {
 
 export default function Cards() {
   const [cards, setCards] = useState<SavedCard[]>([]);
-  const [loading, setLoading] = useState(false);
   const { getToken } = useAuth();
   
   // Add Card State

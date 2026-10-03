@@ -1,9 +1,8 @@
-import { useUser, useAuth } from '@clerk/react';
+import { useAuth } from '@clerk/react';
 import { 
   Send, QrCode, Landmark, CreditCard,
   Smartphone, Lightbulb, Tv, Wifi,
-  Wallet, History, ArrowRightLeft, ShieldCheck,
-  Cpu, Radio, Layers, Zap, Bell, ArrowRight, Bot
+  Wallet, ArrowRightLeft, ShieldCheck, Radio, Layers, Zap, ArrowRight, Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -22,11 +21,10 @@ interface Transaction {
 }
 
 export default function Dashboard() {
-  const { user } = useUser();
   const { getToken } = useAuth();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchHistory = async () => {

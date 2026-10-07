@@ -157,14 +157,15 @@ int maxSubArray(vector<int>& a) {
 }
 
 int maxProduct(vector<int>& a) {
-    int mx = a[0], mn = a[0], best = a[0];
+    // double: the running min can overflow int (even long long) although the answer fits in int
+    double mx = a[0], mn = a[0], best = a[0];
     for (int i = 1; i < (int)a.size(); i++) {
         if (a[i] < 0) swap(mx, mn);
-        mx = max(a[i], mx * a[i]);
-        mn = min(a[i], mn * a[i]);
+        mx = max((double)a[i], mx * a[i]);
+        mn = min((double)a[i], mn * a[i]);
         best = max(best, mx);
     }
-    return best;
+    return (int)best;
 }
 ```
 

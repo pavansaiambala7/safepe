@@ -102,7 +102,7 @@ int findMaximumXOR(vector<int>& a) {
 | `__builtin_popcount(x)` | number of set bits (`__builtin_popcountll` for 64-bit) |
 | `a + b = (a ^ b) + ((a & b) << 1)` | addition without `+` |
 | Count bit i over all numbers, mod 3 | the single number when the others appear three times |
-| `for (s = mask; s; s = (s - 1) & mask)` | enumerate all submasks of `mask` |
+| `for (s = mask; s; s = (s - 1) & mask)` | enumerate all non-empty submasks of `mask` (the loop stops before `s = 0`, so handle the empty set separately) |
 
 **C++ template**
 ```cpp

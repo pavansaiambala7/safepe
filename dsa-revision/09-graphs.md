@@ -166,7 +166,7 @@ int ladderLength(string begin, string end, vector<string>& words) {
 
 **Intuition (Kahn's algorithm)**
 A node with **indegree 0** has no unmet dependencies, so it can go first. Remove it, which lowers its
-neighbours' indegrees, and repeat. If you process fewer than n nodes, the leftover nodes form a **cycle**.
+neighbours' indegrees, and repeat. If you process fewer than n nodes, the graph has a **cycle** (every leftover node is on a cycle or reachable from one).
 DFS alternative: append a node *after* visiting all its descendants, then reverse. Use 3 colours (white, grey, black) to detect cycles.
 
 **C++ template**

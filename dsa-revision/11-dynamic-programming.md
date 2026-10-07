@@ -80,7 +80,7 @@ bool wordBreak(string s, vector<string>& dict) {   // dp[i] = s[0..i) can be seg
 }
 ```
 
-**Complexity:** O(n), or O(n²) for Word Break.
+**Complexity:** O(n), or O(n³) for Word Break (O(n²) split points, each building and looking up an O(n) substring).
 
 **Practice (10)**
 | # | Problem | Level |
@@ -491,7 +491,7 @@ int minCut(string s) {                           // Palindrome Partitioning II
 - n is usually ≤ 500 (O(n³)).
 
 **Intuition**
-`dp[i][j] = best over k in [i..j] of dp[i][k] + dp[k+1][j] + cost(i, k, j)`.
+`dp[i][j] = best over k in [i..j) of dp[i][k] + dp[k+1][j] + cost(i, k, j)`.
 Fill by **increasing length** so smaller intervals are ready.
 **Burst Balloons trick:** think of k as the **last** balloon burst in `(i, j)`, not the first. Then its neighbours at that moment are exactly i and j, so the subproblems become independent.
 **Games:** `dp[i][j]` = (my score - opponent's score) on `a[i..j]` = `max(a[i] - dp[i+1][j], a[j] - dp[i][j-1])`.
@@ -652,7 +652,7 @@ int numTrees(int n) {                            // Catalan numbers: unique BSTs
 }
 ```
 
-**Complexity:** O(n).
+**Complexity:** O(n) for the tree DP and rerooting; O(n²) for the Catalan count `numTrees`.
 
 **Practice (10)**
 | # | Problem | Level |
@@ -729,7 +729,7 @@ int minimumXORSum(vector<int>& a, vector<int>& b) {
 Build the number **digit by digit from the most significant digit**. Track:
 - `pos`: the current digit index
 - `tight`: whether the prefix so far equals N's prefix (if so, the next digit can only go up to `N[pos]`; otherwise up to 9)
-- `started`: whether we're still in leading zeros
+- `started`: whether a non-zero digit has been placed yet (false while we're still in leading zeros)
 - plus whatever the property needs (a mask of used digits, the previous digit, a sum mod k...)
 
 Answer for `[L, R]` = `count(R) - count(L-1)`. Memoise only the states where `tight == false` (or include tight in the key).
@@ -737,7 +737,7 @@ Answer for `[L, R]` = `count(R) - count(L-1)`. Memoise only the states where `ti
 **C++ template**
 ```cpp
 // Count numbers in [1, N] with all distinct digits
-string S; int memo[11][1 << 10];
+string S; int memo[20][1 << 10];                  // pos < 20: a long long has at most 19 digits
 int go(int pos, int mask, bool tight, bool started) {
     if (pos == (int)S.size()) return started ? 1 : 0;
     if (!tight && started && memo[pos][mask] != -1) return memo[pos][mask];

@@ -100,7 +100,7 @@ Each element is pushed once and popped once, so the whole scan is O(n).
 1. Store **indices** in the stack, not values, so you can compute distances and widths.
 2. For each i, pop while the order is broken. Each popped index gets its answer from i.
 3. Push i.
-4. **Contribution technique** (sum of subarray minimums, histogram): for each element find its previous smaller (`L`) and next smaller (`R`). It is the minimum of `(i-L)*(R-i)` subarrays, and it spans width `R-L-1` in the histogram.
+4. **Contribution technique** (sum of subarray minimums, histogram): for each element find its previous smaller (`L`) and next smaller (`R`). It is the minimum of `(i-L)*(R-i)` subarrays, and it spans width `R-L-1` in the histogram. With duplicates, make one side non-strict when summing (previous `<`, next `<=`); otherwise a subarray whose minimum appears twice is counted twice.
 5. For circular arrays, loop `i` from `0` to `2n-1` and use `i % n`.
 
 **C++ template**
@@ -211,7 +211,7 @@ int maxResult(vector<int>& a, int k) {
 }
 ```
 
-**Complexity:** O(n) time, O(k) space.
+**Complexity:** O(n) time. The deque holds O(k) indices; Jump Game VI also keeps an O(n) `dp` array.
 
 **Practice (10)**
 | # | Problem | Level |

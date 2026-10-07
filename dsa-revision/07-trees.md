@@ -219,7 +219,7 @@ TreeNode* lca(TreeNode* r, TreeNode* p, TreeNode* q) {
 
 **C++ template**
 ```cpp
-bool isValid(TreeNode* r, long lo = LONG_MIN, long hi = LONG_MAX) {
+bool isValid(TreeNode* r, long long lo = LLONG_MIN, long long hi = LLONG_MAX) {
     if (!r) return true;
     if (r->val <= lo || r->val >= hi) return false;
     return isValid(r->left, lo, r->val) && isValid(r->right, r->val, hi);
@@ -298,10 +298,12 @@ TreeNode* build(vector<int>& pre, int lo, int hi) {           // range of inorde
 }
 // usage: for i, inIdx[in[i]] = i; build(pre, 0, n - 1);
 
-string serialize(TreeNode* r) {
-    if (!r) return "#,";
-    return to_string(r->val) + "," + serialize(r->left) + serialize(r->right);
+void ser(TreeNode* r, string& out) {                         // append into one string: O(n)
+    if (!r) { out += "#,"; return; }
+    out += to_string(r->val) + ",";
+    ser(r->left, out); ser(r->right, out);
 }
+string serialize(TreeNode* r) { string s; ser(r, s); return s; }
 TreeNode* des(istringstream& in) {
     string tok; getline(in, tok, ',');
     if (tok == "#") return nullptr;

@@ -23,7 +23,7 @@ public class GeminiEmbeddingService {
 
     public GeminiEmbeddingService(
             @Value("${safepe.gemini.api-key:dummy_gemini_key}") String apiKey,
-            @Value("${safepe.gemini.embedding-model:text-embedding-004}") String embeddingModel,
+            @Value("${safepe.gemini.embedding-model:gemini-embedding-001}") String embeddingModel,
             @Value("${safepe.gemini.base-url:https://generativelanguage.googleapis.com/v1beta}") String baseUrl) {
         this.apiKey = apiKey;
         this.embeddingModel = embeddingModel;

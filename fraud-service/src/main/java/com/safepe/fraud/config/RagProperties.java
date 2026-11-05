@@ -11,10 +11,10 @@ import org.springframework.stereotype.Component;
  * were hardcoded as private static final constants in VectorSearchService, so
  * editing the config appeared to work and silently did nothing.
  * <p>
- * The YAML default for similarityThreshold is 0.60, matching the constant that
- * was actually in effect. The YAML previously declared 0.75; adopting that
- * number here would have quietly tightened matching and dropped results that
- * the deployed system currently returns.
+ * similarityThreshold is tuned to the embedding model: 0.75 for
+ * gemini-embedding-001 (see application.yml for the measurements). Changing
+ * the model without re-tuning breaks the scam / legitimate separation, so
+ * re-run rag-eval/ whenever it changes.
  */
 @Component
 @ConfigurationProperties(prefix = "safepe.rag")
@@ -25,7 +25,7 @@ public class RagProperties {
     private long cacheTtlSeconds = 300;
 
     /** Minimum cosine similarity (0.0-1.0) for a pattern to count as a match. */
-    private double similarityThreshold = 0.60;
+    private double similarityThreshold = 0.75;
 
     /** Maximum patterns returned from a single search. */
     private int maxResults = 5;

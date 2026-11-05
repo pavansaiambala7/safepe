@@ -68,17 +68,23 @@ safepe:
   gemini:
     api-key: ${GEMINI_API_KEY:gemini_key_here}
     model: ${GEMINI_MODEL:gemini-2.5-flash}
-    embedding-model: ${GEMINI_EMBEDDING_MODEL:text-embedding-004}
+    # text-embedding-004 was retired by Google (embedContent returns 404). When
+    # embedding fails, VectorSearchService silently falls back to a keyword
+    # search with a fixed 50% score - below the threshold - so every message,
+    # scams included, was being ALLOWED.
+    embedding-model: ${GEMINI_EMBEDDING_MODEL:gemini-embedding-001}
     base-url: ${GEMINI_BASE_URL:https://generativelanguage.googleapis.com/v1beta}
 
   # Bound by RagProperties. These keys existed before but nothing read them -
   # VectorSearchService hardcoded the values as constants.
   rag:
     cache-ttl-seconds: 300
-    # 0.60, not the 0.75 this file used to declare. 0.60 is the value the
-    # constant actually applied, so it is what the deployed system has been
-    # tuned against; raising it here would silently drop current matches.
-    similarity-threshold: 0.60
+    # 0.75 for gemini-embedding-001, which scores higher overall than the
+    # retired text-embedding-004. On the rag-eval set (12 scam paraphrases,
+    # 6 legitimate look-alikes) scams scored 83.7-96.7% and legitimate
+    # messages at most 70.6%; 0.60 flagged 4 of the 6 legitimate ones.
+    # Re-tune with rag-eval/ if the embedding model changes again.
+    similarity-threshold: 0.75
     max-results: 5
 
 management:

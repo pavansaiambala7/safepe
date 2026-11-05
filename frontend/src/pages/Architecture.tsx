@@ -66,7 +66,7 @@ export default function Architecture() {
       description: 'Multi-step autonomous reasoning agent engine that executes pattern classification, RAG similarity search, and automated escrow freeze actions.',
       responsibilities: [
         'Agent 1: Zero-shot pattern classification across 9 fraud categories',
-        'Agent 2: Semantic vector search via Gemini text-embedding-004',
+        'Agent 2: Semantic vector search via Gemini gemini-embedding-001',
         'Agent 3: Risk synthesis, automated escrow block, and sound notification trigger',
         'Transparent reasoning step logging with confidence scoring'
       ],

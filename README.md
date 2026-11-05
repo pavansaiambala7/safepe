@@ -122,7 +122,7 @@ sequenceDiagram
     Note over User,GEMINI: Feature 2: Scam Scanner & Trust Score (in-memory cosine similarity)
     User->>GW: POST /api/v1/fraud/analyze-sms { content }
     GW->>AI: Route to VectorSearchService
-    AI->>GEMINI: Generate text-embedding-004 vector
+    AI->>GEMINI: Generate gemini-embedding-001 vector
     GEMINI-->>AI: Dense Embedding Vector
     AI->>PGV: SELECT * FROM fraud_patterns (pattern text)
     PGV-->>AI: Stored scam patterns (KYC phishing, electricity scam)

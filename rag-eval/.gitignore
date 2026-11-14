@@ -1,0 +1,7 @@
+.venv/
+results/*
+!results/*_report.md
+!results/full_fraud_results.json
+!results/full_money_results.json
+__pycache__/
+keys.txt

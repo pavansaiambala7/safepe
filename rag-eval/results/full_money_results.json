@@ -1,0 +1,92 @@
+[
+  {
+    "question": "What is my total spending?",
+    "reference": "Your total spending is \u20b923,147.00 across 11 transactions.",
+    "response": "Hi there! Happy to help you with that.\n\nYour total spending so far is **\u20b923147.00**.",
+    "faithfulness": 0.5,
+    "answer_relevancy": 0.8527073679527554,
+    "factual_correctness": 0.67,
+    "context_recall": 1.0
+  },
+  {
+    "question": "What was my largest transaction and who was it to?",
+    "reference": "Your largest transaction was \u20b915,000.00 to landlord@okicici.",
+    "response": "Hi there! Happy to help you with that.\n\nYour largest transaction was:\n*   **\u20b915,000.00** to `landlord@okicici` on November 1st.",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9431690239896268,
+    "factual_correctness": 0.8,
+    "context_recall": 1.0
+  },
+  {
+    "question": "How much did I spend on Swiggy in total?",
+    "reference": "You spent \u20b91,380.00 on Swiggy across 3 transactions.",
+    "response": "Hi there! I can help you with that.\n\nYou've spent a total of **\u20b91380.00** on Swiggy across these transactions:\n*   \u20b9610.00 on 2026-11-03\n*   \u20b9320.00 on 2026-11-02\n*   \u20b9450.00 on 2026-11-01\n\nIs there anything else you'd like to know about your spending?",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9794098649500163,
+    "factual_correctness": 0.4,
+    "context_recall": 1.0
+  },
+  {
+    "question": "How many transactions have I made?",
+    "reference": "You have made 11 transactions.",
+    "response": "Hi there! You've made **11 transactions** so far. \ud83d\ude0a",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.963178182071287,
+    "factual_correctness": 1.0,
+    "context_recall": 1.0
+  },
+  {
+    "question": "How much have I spent on Uber rides?",
+    "reference": "You spent \u20b9550.00 on Uber across 2 rides.",
+    "response": "Hi there! Let's take a look.\n\nYou've spent a total of **\u20b9550.00** on Uber rides from your recent transactions.\n\nHere are the details:\n*   2026-11-03: \u20b9340.00 to uber@paytm\n*   2026-11-02: \u20b9210.00 to uber@paytm\n\nIs there anything else I can help you with today?",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9468758845126017,
+    "factual_correctness": 0.5,
+    "context_recall": 1.0
+  },
+  {
+    "question": "Did I pay my electricity bill, and how much was it?",
+    "reference": "Yes, you paid \u20b91,840.00 to bescom@sbi, the electricity provider.",
+    "response": "Hi there! Yes, you did pay your electricity bill.\n\n*   You paid \u20b91840.00 to BESCOM on November 1st.",
+    "faithfulness": 0.5,
+    "answer_relevancy": 0.9344411805390294,
+    "factual_correctness": 0.4,
+    "context_recall": 1.0
+  },
+  {
+    "question": "What was my smallest transaction?",
+    "reference": "Your smallest transaction was \u20b9210.00 to uber@paytm.",
+    "response": "Hi there!\n\nYour smallest transaction was **\u20b9210.00** to uber@paytm on November 2, 2026.",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9999999999999994,
+    "factual_correctness": 0.0,
+    "context_recall": 1.0
+  },
+  {
+    "question": "How much did I spend on food delivery from Swiggy and Zomato combined?",
+    "reference": "You spent \u20b91,660.00 on food delivery: \u20b91,380.00 on Swiggy and \u20b9280.00 on Zomato.",
+    "response": "Hey there! Let's check that for you.\n\nYou've spent a total of **\u20b91660.00** on food delivery from Swiggy and Zomato.\n\nHere's the breakdown:\n*   **Swiggy:** \u20b91380.00\n*   **Zomato:** \u20b9280.00",
+    "faithfulness": 1.0,
+    "answer_relevancy": 0.9828174296364948,
+    "factual_correctness": 1.0,
+    "context_recall": 1.0
+  },
+  {
+    "question": "Did I make any payment to Netflix?",
+    "reference": "No. There are no payments to Netflix in your transactions.",
+    "response": "Hello there!\n\nLooking at your recent transactions, I don't see any payments made to Netflix.\n\nIf you believe you made a payment to Netflix and it's not showing up, please let me know. I'm here to help!",
+    "faithfulness": 0.25,
+    "answer_relevancy": 0.9236252923775597,
+    "factual_correctness": 1.0,
+    "context_recall": 1.0
+  },
+  {
+    "question": "Based on my transactions, what is one way I could reduce my spending?",
+    "reference": "Rent of \u20b915,000.00 is your largest expense; among discretionary spending, food delivery totals \u20b91,660.00 across 4 orders and could be reduced by cooking more often.",
+    "response": "Hi there! I can definitely help you with that. Looking at your recent transactions, one area where you could potentially reduce spending is on **food delivery**.\n\nYou've spent around \u20b91660 on food delivery services like Swiggy and Zomato in just the last three days.\n\nHere's one way you could reduce your spending:\n*   **Try cooking at home or packing meals for a few days a week.** This can significantly cut down on recurring food delivery costs and help you save!",
+    "faithfulness": 0.0,
+    "answer_relevancy": 0.876432191511997,
+    "factual_correctness": 0.33,
+    "context_recall": 1.0
+  }
+]

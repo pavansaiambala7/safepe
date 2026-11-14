@@ -1,0 +1,42 @@
+# SafePe RAG evaluation (RAGAS)
+
+Run: `baseline_te004` at 2026-11-06 00:36 | Judge: skipped (SKIP_JUDGE=1), deterministic metrics only
+
+
+## Fraud-pattern RAG (`/fraud/agentic-analyze`)
+
+18 cases: 12 scam paraphrases, 6 legitimate look-alikes.
+
+
+| Metric | Score | What it measures |
+|---|---|---|
+| Verdict accuracy | 0.333 | Scam flagged / legit allowed (deterministic) |
+| Scam detection rate (recall) | 0.000 | Share of scams flagged or blocked |
+| False-positive rate | 0.000 | Share of legit messages wrongly flagged |
+| Top-1 category hit | 0.167 | Best match is the right scam family (scams) |
+| Any category hit | 0.583 | Right family anywhere in results (scams) |
+| Faithfulness | n/a | Summary claims supported by the evidence shown to the LLM |
+| Answer relevancy | n/a | Summary addresses "is this a scam?" |
+| Context precision | n/a | Retrieved patterns are relevant, ranked first |
+| Context recall | n/a | Retrieved patterns cover the reference (scams) |
+
+| ID | Label | Action | Max sim % | Top category | Expected | Faith | Relev | Prec | Recall |
+|---|---|---|---|---|---|---|---|---|---|
+| S01 | SCAM | ALLOW ❌ | 50.0 | PHISHING | PHISHING, KYC_FRAUD | n/a | n/a | n/a | n/a |
+| S02 | SCAM | ALLOW ❌ | 50.0 | PHISHING | PHISHING | n/a | n/a | n/a | n/a |
+| S03 | SCAM | ALLOW ❌ | 50.0 | PHISHING | UPI_FRAUD | n/a | n/a | n/a | n/a |
+| S04 | SCAM | ALLOW ❌ | 50.0 | PHISHING | UPI_FRAUD | n/a | n/a | n/a | n/a |
+| S05 | SCAM | ALLOW ❌ | 50.0 | PHISHING | LOAN_SCAM | n/a | n/a | n/a | n/a |
+| S06 | SCAM | ALLOW ❌ | 50.0 | PHISHING | KYC_FRAUD | n/a | n/a | n/a | n/a |
+| S07 | SCAM | ALLOW ❌ | 50.0 | PHISHING | LOTTERY_SCAM | n/a | n/a | n/a | n/a |
+| S08 | SCAM | ALLOW ❌ | 50.0 | UPI_FRAUD | INVESTMENT_FRAUD | n/a | n/a | n/a | n/a |
+| S09 | SCAM | ALLOW ❌ | 50.0 | PHISHING | IMPERSONATION | n/a | n/a | n/a | n/a |
+| S10 | SCAM | ALLOW ❌ | 50.0 | PHISHING | IMPERSONATION | n/a | n/a | n/a | n/a |
+| S11 | SCAM | ALLOW ❌ | 50.0 | PHISHING | VISHING | n/a | n/a | n/a | n/a |
+| S12 | SCAM | ALLOW ❌ | 50.0 | PHISHING | VISHING | n/a | n/a | n/a | n/a |
+| B01 | LEGIT | ALLOW | 50.0 | PHISHING | - | n/a | n/a | n/a | n/a |
+| B02 | LEGIT | ALLOW | 50.0 | PHISHING | - | n/a | n/a | n/a | n/a |
+| B03 | LEGIT | ALLOW | 50.0 | PHISHING | - | n/a | n/a | n/a | n/a |
+| B04 | LEGIT | ALLOW | 50.0 | PHISHING | - | n/a | n/a | n/a | n/a |
+| B05 | LEGIT | ALLOW | 50.0 | UPI_FRAUD | - | n/a | n/a | n/a | n/a |
+| B06 | LEGIT | ALLOW | 50.0 | PHISHING | - | n/a | n/a | n/a | n/a |

@@ -1,132 +1,44 @@
-import { useState, useEffect } from 'react';
-import { Radio, Activity, AlertTriangle, CheckCircle, XCircle, RefreshCw, Zap, Clock } from 'lucide-react';
-import { useNotifications } from '../context/NotificationContext';
+import { useState } from 'react';
+import { Radio, Activity, AlertTriangle, CheckCircle, XCircle, Clock, Bell } from 'lucide-react';
+import { useNotifications, type NotificationItem } from '../context/NotificationContext';
 
-interface EventItem {
-  id: string;
-  type: 'TRANSACTION' | 'FRAUD_ALERT';
-  transactionId: string;
-  timestamp: string;
-  details: string;
-  riskScore?: number;
-  action?: string;
-  amount?: string;
-  upiId?: string;
-}
+// Real events only: notification-service consumes the Kafka topics and pushes
+// each event to the browser over Server-Sent Events (NotificationContext).
+// Nothing on this page is simulated.
 
-// Demo events for visualization (in production, these come from a WebSocket/SSE endpoint)
-const DEMO_EVENTS: EventItem[] = [
-  {
-    id: 'evt-001', type: 'TRANSACTION', transactionId: 'txn-a1b2c3',
-    timestamp: new Date().toISOString(), details: 'Payment of ₹2,500 to reliance.retail@oksbi',
-    amount: '2500', upiId: 'reliance.retail@oksbi'
-  },
-  {
-    id: 'evt-002', type: 'FRAUD_ALERT', transactionId: 'txn-a1b2c3',
-    timestamp: new Date().toISOString(), details: 'Agentic AI analysis complete — ALLOW',
-    riskScore: 15, action: 'ALLOW'
-  },
-  {
-    id: 'evt-003', type: 'TRANSACTION', transactionId: 'txn-d4e5f6',
-    timestamp: new Date().toISOString(), details: 'Payment of ₹85,000 to unknown@paytm',
-    amount: '85000', upiId: 'unknown@paytm'
-  },
-  {
-    id: 'evt-004', type: 'FRAUD_ALERT', transactionId: 'txn-d4e5f6',
-    timestamp: new Date().toISOString(), details: 'High-value transaction flagged — FLAG_VERIFICATION',
-    riskScore: 62, action: 'FLAG_VERIFICATION'
-  },
-  {
-    id: 'evt-005', type: 'TRANSACTION', transactionId: 'txn-g7h8i9',
-    timestamp: new Date().toISOString(), details: 'Payment of ₹1,50,000 to suspicious.merchant@upi',
-    amount: '150000', upiId: 'suspicious.merchant@upi'
-  },
-  {
-    id: 'evt-006', type: 'FRAUD_ALERT', transactionId: 'txn-g7h8i9',
-    timestamp: new Date().toISOString(), details: 'Transaction blocked — BLOCK',
-    riskScore: 89, action: 'BLOCK'
-  },
-];
+type Filter = 'ALL' | 'PAYMENTS' | 'FRAUD' | 'REMINDERS';
+
+const matches = (n: NotificationItem, f: Filter) => {
+  if (f === 'ALL') return true;
+  if (f === 'PAYMENTS') return n.type === 'SUCCESS';
+  if (f === 'FRAUD') return n.type === 'FRAUD_ALERT' || n.type === 'ESCROW_REFUND' || n.type === 'REFUND_INITIATED';
+  return n.type === 'REMINDER';
+};
+
+const style = (n: NotificationItem) => {
+  if (n.type === 'FRAUD_ALERT') return { label: '🚨 ALERT', color: '#ef4444', icon: <XCircle size={16} /> };
+  if (n.type === 'REMINDER') return { label: '⏰ BILL', color: '#f59e0b', icon: <Bell size={16} /> };
+  if (n.type === 'SUCCESS') return { label: '💸 TXN', color: '#3b82f6', icon: <CheckCircle size={16} /> };
+  if (n.type === 'ESCROW_REFUND' || n.type === 'REFUND_INITIATED') return { label: '↩ REFUND', color: '#10b981', icon: <AlertTriangle size={16} /> };
+  return { label: 'EVENT', color: '#6b7280', icon: <Activity size={16} /> };
+};
 
 export default function KafkaEventMonitor() {
-  const [events, setEvents] = useState<EventItem[]>([]);
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [filter, setFilter] = useState<'ALL' | 'TRANSACTION' | 'FRAUD_ALERT'>('ALL');
-  const [eventCount, setEventCount] = useState(0);
-  const { addNotification } = useNotifications();
+  const { notifications, sseConnected } = useNotifications();
+  const [filter, setFilter] = useState<Filter>('ALL');
 
-  // Simulate live streaming of Kafka events
-  const startStreaming = () => {
-    setIsStreaming(true);
-    setEvents([]);
-    setEventCount(0);
+  const events = notifications.filter(n => matches(n, filter));
 
-    DEMO_EVENTS.forEach((event, index) => {
-      setTimeout(() => {
-        setEvents(prev => [{ ...event, id: `evt-${Date.now()}-${index}`, timestamp: new Date().toISOString() }, ...prev]);
-        setEventCount(prev => prev + 1);
+  const formatTime = (iso: string) =>
+    new Date(iso).toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-        // When a high risk fraud event arrives in Kafka stream, push to Bell notification!
-        if (event.action === 'BLOCK') {
-          addNotification({
-            type: 'FRAUD_ALERT',
-            title: '🚨 High-Risk Fraud Intercepted in Kafka Bus',
-            message: `Kafka stream flagged ${event.details} (Risk Score: ${event.riskScore}%). Automated escrow refund triggered.`,
-            amount: 150000,
-            upiId: 'suspicious.merchant@upi',
-            referenceId: event.transactionId,
-            fraudDetails: {
-              threatCategory: 'HIGH_VALUE_UNVERIFIED_MERCHANT',
-              similarityMatch: 89.0,
-              matchedPatternDescription: 'Kafka event-driven consumer intercepted transaction before bank nodal settlement.',
-              merchantName: 'Suspicious Fake Merchant',
-              merchantUpi: 'suspicious.merchant@upi',
-              reportedCount: 15,
-              action: 'BLOCK',
-              refundId: `rzp_rfnd_${Date.now().toString().slice(-7)}`,
-              refundAmount: 150000
-            }
-          });
-        } else if (event.type === 'TRANSACTION' && event.upiId === 'reliance.retail@oksbi') {
-          addNotification({
-            type: 'SUCCESS',
-            title: '✅ Transaction Completed',
-            message: event.details,
-            amount: 2500,
-            upiId: event.upiId,
-            referenceId: event.transactionId
-          });
-        }
-      }, (index + 1) * 1200);
-    });
-
-    setTimeout(() => setIsStreaming(false), DEMO_EVENTS.length * 1200 + 500);
-  };
-
-  const filteredEvents = events.filter(e => filter === 'ALL' || e.type === filter);
-
-  const getActionColor = (action?: string) => {
-    switch (action) {
-      case 'BLOCK': return '#ef4444';
-      case 'FLAG_VERIFICATION': return '#f59e0b';
-      case 'ALLOW': return '#10b981';
-      default: return '#6b7280';
-    }
-  };
-
-  const getActionIcon = (action?: string) => {
-    switch (action) {
-      case 'BLOCK': return <XCircle size={16} />;
-      case 'FLAG_VERIFICATION': return <AlertTriangle size={16} />;
-      case 'ALLOW': return <CheckCircle size={16} />;
-      default: return <Activity size={16} />;
-    }
-  };
-
-  const formatTime = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-  };
+  const topic = (name: string) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px', borderRadius: 12, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)' }}>
+      <div style={{ width: 8, height: 8, borderRadius: '50%', background: sseConnected ? '#10b981' : '#6b7280', animation: sseConnected ? 'pulse-dot 1.5s infinite' : 'none' }} />
+      <span style={{ fontSize: 12, fontWeight: 600 }}>{name}</span>
+      <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', background: 'var(--color-bg-primary)', padding: '2px 6px', borderRadius: 4 }}>3 partitions</span>
+    </div>
+  );
 
   return (
     <div style={{ maxWidth: 900, margin: '0 auto', padding: '24px 16px' }}>
@@ -139,14 +51,16 @@ export default function KafkaEventMonitor() {
           </h1>
         </div>
         <p style={{ color: 'var(--color-text-secondary)', fontSize: 14, margin: 0 }}>
-          Real-time event stream from transaction-events & fraud-alerts Kafka topics
+          Live events from the transaction-events and bill-reminders Kafka topics
         </p>
       </div>
 
       {/* Controls */}
       <div className="surface-panel" style={{ marginBottom: 24, padding: 20, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12 }}>
-        <div style={{ display: 'flex', gap: 8 }}>
-          {(['ALL', 'TRANSACTION', 'FRAUD_ALERT'] as const).map(f => (
+        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+          {([
+            ['ALL', '📡 All'], ['PAYMENTS', '💸 Payments'], ['FRAUD', '🚨 Fraud'], ['REMINDERS', '⏰ Bills']
+          ] as const).map(([f, label]) => (
             <button
               key={f}
               onClick={() => setFilter(f)}
@@ -157,113 +71,68 @@ export default function KafkaEventMonitor() {
                 color: filter === f ? '#8b5cf6' : 'var(--color-text-secondary)'
               }}
             >
-              {f === 'ALL' ? '📡 All' : f === 'TRANSACTION' ? '💸 Transactions' : '🚨 Fraud Alerts'}
+              {label}
             </button>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-            {eventCount} events processed
-          </span>
-          <button
-            className="btn-primary"
-            onClick={startStreaming}
-            disabled={isStreaming}
-            style={{ padding: '8px 18px', borderRadius: 10, display: 'flex', alignItems: 'center', gap: 6, fontSize: 13 }}
-          >
-            {isStreaming ? (
-              <><RefreshCw size={14} className="spin" /> Streaming...</>
-            ) : (
-              <><Zap size={14} /> Start Stream</>
-            )}
-          </button>
-        </div>
+        <span style={{ fontSize: 12, fontWeight: 600, color: sseConnected ? '#059669' : 'var(--color-text-secondary)' }}>
+          {sseConnected ? '● Connected to event stream' : '○ Connecting to event stream...'} • {notifications.length} events
+        </span>
       </div>
 
       {/* Topic Badges */}
       <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap' }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
-          borderRadius: 12, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)'
-        }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: isStreaming ? '#10b981' : '#6b7280', animation: isStreaming ? 'pulse-dot 1.5s infinite' : 'none' }} />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>transaction-events</span>
-          <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', background: 'var(--color-bg-primary)', padding: '2px 6px', borderRadius: 4 }}>3 partitions</span>
-        </div>
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px',
-          borderRadius: 12, background: 'var(--color-bg-secondary)', border: '1px solid var(--color-border)'
-        }}>
-          <div style={{ width: 8, height: 8, borderRadius: '50%', background: isStreaming ? '#f59e0b' : '#6b7280', animation: isStreaming ? 'pulse-dot 1.5s infinite' : 'none' }} />
-          <span style={{ fontSize: 12, fontWeight: 600 }}>fraud-alerts</span>
-          <span style={{ fontSize: 10, color: 'var(--color-text-secondary)', background: 'var(--color-bg-primary)', padding: '2px 6px', borderRadius: 4 }}>3 partitions</span>
-        </div>
+        {topic('transaction-events')}
+        {topic('bill-reminders')}
       </div>
 
       {/* Event Stream */}
       <div className="surface-panel" style={{ padding: 0, overflow: 'hidden' }}>
-        {filteredEvents.length === 0 ? (
+        {events.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: 'var(--color-text-secondary)' }}>
             <Radio size={48} style={{ opacity: 0.3, marginBottom: 12 }} />
-            <p style={{ margin: 0 }}>No events yet. Click "Start Stream" to simulate Kafka events.</p>
+            <p style={{ margin: 0 }}>No events yet. Make a payment and its Kafka events will appear here.</p>
           </div>
         ) : (
-          filteredEvents.map((event, i) => (
-            <div
-              key={event.id}
-              style={{
-                padding: '14px 20px', borderBottom: '1px solid var(--color-border)',
-                display: 'flex', alignItems: 'center', gap: 14,
-                animation: i === 0 ? 'slideIn 0.4s ease' : 'none',
-                background: i === 0 ? 'var(--color-bg-secondary)' : 'transparent'
-              }}
-            >
-              {/* Event Type Badge */}
-              <div style={{
-                padding: '4px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700, minWidth: 90, textAlign: 'center',
-                background: event.type === 'TRANSACTION' ? '#3b82f620' : '#ef444420',
-                color: event.type === 'TRANSACTION' ? '#3b82f6' : '#ef4444'
-              }}>
-                {event.type === 'TRANSACTION' ? '💸 TXN' : '🚨 ALERT'}
-              </div>
-
-              {/* Event Details */}
-              <div style={{ flex: 1 }}>
-                <p style={{ margin: 0, fontSize: 13, fontWeight: 500 }}>{event.details}</p>
-                <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-secondary)' }}>
-                  <Clock size={10} style={{ verticalAlign: 'middle', marginRight: 4 }} />
-                  {formatTime(event.timestamp)} • ID: {event.transactionId}
-                </p>
-              </div>
-
-              {/* Risk Score / Action */}
-              {event.type === 'FRAUD_ALERT' && event.action && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{
-                    padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700,
-                    background: getActionColor(event.action) + '20', color: getActionColor(event.action),
-                    display: 'flex', alignItems: 'center', gap: 4
-                  }}>
-                    {getActionIcon(event.action)} {event.action}
-                  </span>
-                  {event.riskScore !== undefined && (
-                    <span style={{
-                      fontSize: 13, fontWeight: 800, color: getActionColor(event.action)
-                    }}>
-                      {event.riskScore}%
-                    </span>
-                  )}
+          events.map((n, i) => {
+            const s = style(n);
+            return (
+              <div
+                key={n.id}
+                style={{
+                  padding: '14px 20px', borderBottom: '1px solid var(--color-border)',
+                  display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',
+                  animation: i === 0 ? 'slideIn 0.4s ease' : 'none'
+                }}
+              >
+                <div style={{ padding: '4px 10px', borderRadius: 8, fontSize: 10, fontWeight: 700, minWidth: 90, textAlign: 'center', background: s.color + '20', color: s.color }}>
+                  {s.label}
                 </div>
-              )}
 
-              {event.type === 'TRANSACTION' && event.amount && (
-                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-primary)' }}>
-                  ₹{Number(event.amount).toLocaleString('en-IN')}
-                </span>
-              )}
-            </div>
-          ))
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <p style={{ margin: 0, fontSize: 13, fontWeight: 600 }}>{n.title}</p>
+                  <p style={{ margin: '2px 0', fontSize: 12, color: 'var(--color-text-secondary)' }}>{n.message}</p>
+                  <p style={{ margin: 0, fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                    <Clock size={10} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                    {formatTime(n.timestamp)}{n.referenceId ? ` • ID: ${n.referenceId}` : ''}
+                  </p>
+                </div>
+
+                {n.fraudDetails?.action && (
+                  <span style={{ padding: '4px 10px', borderRadius: 8, fontSize: 11, fontWeight: 700, background: s.color + '20', color: s.color, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    {s.icon} {n.fraudDetails.action}
+                  </span>
+                )}
+
+                {n.amount !== undefined && n.amount !== null && (
+                  <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-primary)' }}>
+                    ₹{Number(n.amount).toLocaleString('en-IN')}
+                  </span>
+                )}
+              </div>
+            );
+          })
         )}
       </div>
 
@@ -276,8 +145,6 @@ export default function KafkaEventMonitor() {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.3; }
         }
-        .spin { animation: spin 1s linear infinite; }
-        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
     </div>
   );

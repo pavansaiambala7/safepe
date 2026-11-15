@@ -36,9 +36,7 @@ export default function NotificationBell() {
     markAllAsRead,
     deleteNotification,
     clearAll,
-    closeToast,
-    simulateSuccess,
-    simulateFraudAndRefund
+    closeToast
   } = useNotifications();
 
   const [isOpen, setIsOpen] = useState(false);
@@ -412,76 +410,6 @@ export default function NotificationBell() {
                 }}
               >
                 <X size={18} />
-              </button>
-            </div>
-          </div>
-
-          {/* Simulation Action Bar */}
-          <div
-            style={{
-              padding: '10px 16px',
-              background: '#f1f5f9',
-              borderBottom: '1px solid var(--color-border)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 8
-            }}
-          >
-            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-text-secondary)', display: 'flex', alignItems: 'center', gap: 4 }}>
-              <Zap size={13} color="#f59e0b" /> TEST ALERTS:
-            </span>
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button
-                onClick={() => simulateSuccess(1200, 'starbucks@okaxis')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 12,
-                  border: '1px solid #10b981',
-                  background: '#10b98115',
-                  color: '#059669',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                + Success
-              </button>
-              <button
-                onClick={() => simulateFraudAndRefund(4500, 'lottery.winner881@ybl')}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 12,
-                  border: '1px solid #ef4444',
-                  background: '#ef444415',
-                  color: '#dc2626',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                + Fraud & Refund
-              </button>
-              <button
-                onClick={async () => {
-                  try {
-                    await fetch('/api/v1/bills/run-reminders', { method: 'POST' });
-                  } catch (e) {
-                    console.warn('Manual bill reminder API error:', e);
-                  }
-                }}
-                style={{
-                  padding: '4px 10px',
-                  borderRadius: 12,
-                  border: '1px solid #0284c7',
-                  background: '#0284c715',
-                  color: '#0284c7',
-                  fontSize: 10,
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                + Bill Due
               </button>
             </div>
           </div>

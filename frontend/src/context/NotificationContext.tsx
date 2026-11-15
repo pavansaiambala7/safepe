@@ -41,94 +41,23 @@ interface NotificationContextType {
   deleteNotification: (id: string) => void;
   clearAll: () => void;
   closeToast: () => void;
-  simulateSuccess: (amount?: number, upiId?: string) => void;
-  simulateFraudAndRefund: (amount?: number, upiId?: string) => void;
 }
 
-const INITIAL_NOTIFICATIONS: NotificationItem[] = [
-  {
-    id: 'notif-1',
-    type: 'FRAUD_ALERT',
-    title: 'High-Risk Fraud Blocked & Escrow Refund Initiated',
-    message: 'Payment of ₹5,000 to customercare_kyc@ybl was intercepted before settlement. Merchant trust score is 0%.',
-    timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
-    isRead: false,
-    amount: 5000,
-    upiId: 'customercare_kyc@ybl',
-    referenceId: 'TXN_BLOCKED_98214',
-    fraudDetails: {
-      threatCategory: 'KYC_EXPIRATION_PHISHING',
-      similarityMatch: 94.2,
-      matchedPatternDescription: 'Your Paytm KYC has expired. Complete your KYC verification now by sharing your Aadhaar number...',
-      merchantName: 'KYC Update Desk (Fake)',
-      merchantUpi: 'customercare_kyc@ybl',
-      reportedCount: 18,
-      action: 'BLOCK',
-      refundId: 'rzp_rfnd_92817482',
-      refundAmount: 5000
-    }
-  },
-  {
-    id: 'notif-1b',
-    type: 'REFUND_INITIATED',
-    title: 'Escrow Refund Initiated',
-    message: 'Automated clawback of ₹5,000 triggered. Refund is being processed via Razorpay escrow protection.',
-    timestamp: new Date(Date.now() - 4.5 * 60 * 1000).toISOString(),
-    isRead: false,
-    amount: 5000,
-    upiId: 'customercare_kyc@ybl',
-    referenceId: 'rzp_rfnd_92817482'
-  },
-  {
-    id: 'notif-2',
-    type: 'ESCROW_REFUND',
-    title: 'SafePe Escrow Refund Completed',
-    message: '₹5,000.00 has been credited back to your HDFC Bank (•••• 8842). Escrow protection activated.',
-    timestamp: new Date(Date.now() - 4 * 60 * 1000).toISOString(),
-    isRead: false,
-    amount: 5000,
-    upiId: 'customercare_kyc@ybl',
-    referenceId: 'rzp_rfnd_92817482',
-    fraudDetails: {
-      threatCategory: 'KYC_EXPIRATION_PHISHING',
-      similarityMatch: 94.2,
-      matchedPatternDescription: 'Automated clawback from nodal account before merchant settlement.',
-      merchantName: 'KYC Update Desk (Fake)',
-      merchantUpi: 'customercare_kyc@ybl',
-      reportedCount: 18,
-      action: 'BLOCK',
-      refundId: 'rzp_rfnd_92817482',
-      refundAmount: 5000
-    }
-  },
-  {
-    id: 'notif-3',
-    type: 'SUCCESS',
-    title: 'Payment Successful',
-    message: 'Payment of ₹1,450 to BESCOM Electricity Bill was completed securely via Bharat BillPay (BBPS).',
-    timestamp: new Date(Date.now() - 25 * 60 * 1000).toISOString(),
-    isRead: true,
-    amount: 1450,
-    upiId: 'bescom@karnataka.gov.in',
-    referenceId: 'BBPS_BESCOM_91823'
-  },
-  {
-    id: 'notif-4',
-    type: 'SECURITY',
-    title: 'Token Vault Security Update',
-    message: 'Your HDFC Bank account was tokenized under PCI-DSS compliance standards with AES-256 vault encryption.',
-    timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    isRead: true,
-    referenceId: 'VAULT_TOKEN_8842'
-  }
-];
+const STORAGE_KEY = 'safepe_notifications_v2';
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    const saved = localStorage.getItem('safepe_notifications');
-    return saved ? JSON.parse(saved) : INITIAL_NOTIFICATIONS;
+    // v2: earlier builds seeded demo notifications under 'safepe_notifications';
+    // drop those so users only ever see their real notifications.
+    try {
+      localStorage.removeItem('safepe_notifications');
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
   });
 
   const [activeToast, setActiveToast] = useState<NotificationItem | null>(null);
@@ -137,7 +66,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
-    localStorage.setItem('safepe_notifications', JSON.stringify(notifications));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+    } catch {
+      /* storage unavailable (private mode) - keep notifications in memory only */
+    }
   }, [notifications]);
 
   // ── SSE Connection to Backend Kafka Notification Stream ──────────────
@@ -271,78 +204,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     setActiveToast(null);
   };
 
-  // Helper simulations for immediate demo & testing
-  const simulateSuccess = (amount = 500, upiId = 'reliance.retail@oksbi') => {
-    addNotification({
-      type: 'SUCCESS',
-      title: 'Transaction Successful',
-      message: `Payment of ₹${amount.toLocaleString('en-IN')} to ${upiId} was completed successfully via Razorpay UPI.`,
-      amount,
-      upiId,
-      referenceId: `TXN_${Date.now().toString().slice(-6)}`
-    });
-  };
-
-  const simulateFraudAndRefund = (amount = 2500, upiId = 'urgent.refund892@ybl') => {
-    const refundId = `rzp_rfnd_${Date.now().toString().slice(-8)}`;
-
-    // 1. Fraud Alert
-    addNotification({
-      type: 'FRAUD_ALERT',
-      title: 'High-Risk Fraud Intercepted by SafePe AI',
-      message: `Payment of ₹${amount.toLocaleString('en-IN')} to ${upiId} was blocked. Threat: Impersonation & Fake Refund Scam.`,
-      amount,
-      upiId,
-      referenceId: `TXN_BLOCKED_${Date.now().toString().slice(-5)}`,
-      fraudDetails: {
-        threatCategory: 'IMPERSONATION_REFUND_SCAM',
-        similarityMatch: 96.5,
-        matchedPatternDescription: 'I am calling from customer care. Your order has a refund of Rs 5000. Enter UPI PIN to claim...',
-        merchantName: 'Fake Customer Refund Desk',
-        merchantUpi: upiId,
-        reportedCount: 24,
-        action: 'BLOCK',
-        refundId,
-        refundAmount: amount
-      }
-    });
-
-    // 2. Refund Initiated (1.5s later)
-    setTimeout(() => {
-      addNotification({
-        type: 'REFUND_INITIATED',
-        title: 'Escrow Refund Initiated',
-        message: `Automated clawback of ₹${amount.toLocaleString('en-IN')} triggered. Refund is being processed via Razorpay escrow.`,
-        amount,
-        upiId,
-        referenceId: refundId
-      });
-    }, 1500);
-
-    // 3. Refund Completed (3.5s later)
-    setTimeout(() => {
-      addNotification({
-        type: 'ESCROW_REFUND',
-        title: 'SafePe Escrow Refund Completed',
-        message: `₹${amount.toLocaleString('en-IN')}.00 has been refunded to your bank. Escrow auto-clawback protected your funds.`,
-        amount,
-        upiId,
-        referenceId: refundId,
-        fraudDetails: {
-          threatCategory: 'IMPERSONATION_REFUND_SCAM',
-          similarityMatch: 96.5,
-          matchedPatternDescription: 'Escrow auto-clawback executed before settlement cycle.',
-          merchantName: 'Fake Customer Refund Desk',
-          merchantUpi: upiId,
-            reportedCount: 24,
-          action: 'BLOCK',
-          refundId,
-          refundAmount: amount
-        }
-      });
-    }, 3500);
-  };
-
   return (
     <NotificationContext.Provider
       value={{
@@ -357,9 +218,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
         markAllAsRead,
         deleteNotification,
         clearAll,
-        closeToast,
-        simulateSuccess,
-        simulateFraudAndRefund
+        closeToast
       }}
     >
       {children}

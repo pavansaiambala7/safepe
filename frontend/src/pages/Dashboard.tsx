@@ -352,62 +352,19 @@ export default function Dashboard() {
           <div>
             <h3 style={{ fontSize: '16px', fontWeight: '800', margin: 0 }}>Recent Transactions</h3>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', margin: '2px 0 0 0' }}>
-              Vector DB Pattern Verified • Trust Score Evaluated
+              Your latest SafePe payments
             </p>
           </div>
-          <span style={{ fontSize: '12px', color: '#059669', fontWeight: '700', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
-            {transactions.length > 0 ? `${transactions.length} Verified` : 'Live Ledger Active'}
-          </span>
+          {transactions.length > 0 && (
+            <span style={{ fontSize: '12px', color: '#059669', fontWeight: '700', background: 'rgba(16, 185, 129, 0.1)', padding: '4px 10px', borderRadius: '12px' }}>
+              {transactions.length} {transactions.length === 1 ? 'payment' : 'payments'}
+            </span>
+          )}
         </div>
 
         {transactions.length === 0 ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            {/* Demo Transaction Rows with Trust Score */}
-            {[
-              { id: '1', payee: 'swiggy@icici', amount: 480, type: 'UPI', date: 'Today, 1:15 PM', trust: 98, ragStatus: 'Low Risk (<50%)' },
-              { id: '2', payee: 'electricity-board@billdesk', amount: 1450, type: 'BBPS', date: 'Yesterday', trust: 95, ragStatus: 'Low Risk (<50%)' },
-              { id: '3', payee: 'rahul.kumar@okhdfcbank', amount: 2000, type: 'UPI', date: '28 Aug', trust: 92, ragStatus: 'Low Risk (<50%)' },
-            ].map((txn) => (
-              <div key={txn.id} style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                padding: '14px 16px',
-                borderRadius: '12px',
-                background: 'var(--color-bg-secondary)',
-                border: '1px solid var(--color-border)',
-                flexWrap: 'wrap',
-                gap: '10px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <div style={{ background: '#10b98115', color: '#059669', padding: '10px', borderRadius: '10px', fontWeight: '800', fontSize: '13px' }}>
-                    {txn.type}
-                  </div>
-                  <div>
-                    <h5 style={{ margin: 0, fontSize: '14px', fontWeight: '700' }}>{txn.payee}</h5>
-                    <span style={{ fontSize: '11px', color: 'var(--color-text-secondary)' }}>{txn.date}</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-text-primary)' }}>
-                      ₹{txn.amount}
-                    </div>
-                    <span style={{
-                      fontSize: '10px',
-                      fontWeight: '700',
-                      color: txn.trust >= 75 ? '#059669' : '#dc2626',
-                      background: txn.trust >= 75 ? '#10b98115' : '#ef444415',
-                      padding: '2px 6px',
-                      borderRadius: '6px'
-                    }}>
-                      🛡️ {txn.trust}% Trust • {txn.ragStatus}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div style={{ padding: '24px', textAlign: 'center', color: 'var(--color-text-secondary)', fontSize: '14px', borderRadius: '12px', background: 'var(--color-bg-secondary)', border: '1px dashed var(--color-border)' }}>
+            {loading ? 'Loading transactions...' : 'No transactions yet. Your payments will appear here.'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
@@ -437,8 +394,12 @@ export default function Dashboard() {
                   <div style={{ fontSize: '14px', fontWeight: '800', color: 'var(--color-text-primary)' }}>
                     ₹{txn.amount}
                   </div>
-                  <span style={{ fontSize: '10px', fontWeight: '700', color: '#059669', background: '#10b98115', padding: '2px 6px', borderRadius: '6px' }}>
-                    🛡️ 95% Trust • RAG Cleared
+                  <span style={{
+                    fontSize: '10px', fontWeight: '700', padding: '2px 6px', borderRadius: '6px',
+                    color: txn.status === 'SUCCESS' ? '#059669' : txn.status === 'FAILED' ? '#dc2626' : '#2563eb',
+                    background: txn.status === 'SUCCESS' ? '#10b98115' : txn.status === 'FAILED' ? '#ef444415' : '#3b82f615'
+                  }}>
+                    {txn.status || 'PENDING'}
                   </span>
                 </div>
               </div>

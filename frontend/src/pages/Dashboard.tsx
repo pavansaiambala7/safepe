@@ -1,9 +1,9 @@
-import { useUser, useAuth } from '@clerk/react';
-import { 
+import { useAuth } from '@clerk/react';
+import {
   Send, QrCode, Landmark, CreditCard,
   Smartphone, Lightbulb, Tv, Wifi,
-  Wallet, History, ArrowRightLeft, ShieldCheck,
-  Cpu, Radio, Layers, Zap, Bell, ArrowRight, Bot
+  Wallet, ArrowRightLeft, ShieldCheck,
+  Radio, Layers, Zap, ArrowRight, Bot
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useState, useEffect } from 'react';
@@ -22,7 +22,6 @@ interface Transaction {
 }
 
 export default function Dashboard() {
-  const { user } = useUser();
   const { getToken } = useAuth();
   
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -85,11 +84,11 @@ export default function Dashboard() {
                   5-Service Distributed Platform Active
                 </h3>
                 <span style={{ fontSize: 11, fontWeight: 800, padding: '2px 8px', borderRadius: 8, background: '#10b98125', color: '#059669' }}>
-                  ● 99.5% Uptime
+                  ● Live
                 </span>
               </div>
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)', margin: '4px 0 0 0' }}>
-                3 AI Features • LangChain4j Agentic AI (92% Accuracy) • 480ms Redis Vector Latency • Kafka KRaft Bus
+                Money Assistant • Fraud-Pattern RAG (12/12 test scams caught) • SMS Scam Scanner • Kafka KRaft Events
               </p>
             </div>
           </div>

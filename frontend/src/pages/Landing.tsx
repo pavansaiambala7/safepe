@@ -2,7 +2,7 @@
 import {
   ShieldCheck, Lock, Zap, Server,
   Radio, Database, Bell, ArrowRight, Activity,
-  ChevronRight, Shield, Cpu, CreditCard, Search, BarChart3
+  ChevronRight, Shield, Cpu, CreditCard, Search
 } from "lucide-react";
 import { SignInButton } from "@clerk/react";
 
@@ -148,9 +148,9 @@ export default function Landing() {
 
   const securityItems = [
     { icon: <ShieldCheck size={20} color="#10b981" />, title: "Clerk JWKS JWT", desc: "Stateless cryptographic signature validation at Gateway" },
-    { icon: <Lock size={20} color="#8b5cf6" />, title: "AES-256 GCM Vault", desc: "Card numbers and UPI IDs encrypted at rest with IV" },
-    { icon: <Zap size={20} color="#f59e0b" />, title: "Bucket4j Rate Limit", desc: "100 req/min per IP, blocks automated attacks" },
-    { icon: <Activity size={20} color="#3b82f6" />, title: "Vector Trust Score", desc: "Cosine similarity 60pct+ triggers auto BLOCK with audit" },
+    { icon: <Lock size={20} color="#8b5cf6" />, title: "Provider Tokenization", desc: "Cards stored as Razorpay tokens plus last 4 digits; full card numbers are never stored" },
+    { icon: <Zap size={20} color="#f59e0b" />, title: "Bucket4j Rate Limit", desc: "Per-user limits: 1 req/s on AI endpoints, 5 req/s on payments, 429 with Retry-After" },
+    { icon: <Activity size={20} color="#3b82f6" />, title: "Fraud-Pattern RAG", desc: "Similarity of 0.75 or more to a known scam raises the risk score; 85+ is blocked" },
   ];
 
   return (
@@ -172,8 +172,8 @@ export default function Landing() {
 
           <p style={{ fontSize: "18px", color: "#94a3b8", maxWidth: "650px", margin: "0 auto 40px", lineHeight: "1.7" }}>
             Enterprise UPI platform with <strong style={{ color: "#e2e8f0" }}>Gemini AI Money Assistant</strong>,{" "}
-            <strong style={{ color: "#e2e8f0" }}>pgvector Scam Scanner</strong>, real-time Kafka SSE,
-            and AES-256 token vault on AWS.
+            <strong style={{ color: "#e2e8f0" }}>RAG Scam Detection</strong>, real-time Kafka notifications,
+            and tokenized card storage on AWS.
           </p>
 
           <div style={{ display: "flex", gap: "16px", justifyContent: "center", flexWrap: "wrap" }}>
@@ -198,11 +198,11 @@ export default function Landing() {
 
       <section style={{ maxWidth: "1100px", margin: "0 auto", padding: "80px 24px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "20px" }}>
-          <StatBadge value={92} suffix="%" label="AI Fraud Detection Accuracy" color="#10b981" />
-          <StatBadge value={480} suffix="ms" label="Redis Vector Cache Latency" color="#8b5cf6" />
-          <StatBadge value={1000} suffix="+" label="Encrypted Vault Accounts" color="#3b82f6" />
-          <StatBadge value={5} label="Distributed Microservices" color="#f59e0b" />
-          <StatBadge value={3} label="LangChain4j AI Agents" color="#ec4899" />
+          <StatBadge value={12} suffix=" / 12" label="Test Scams Caught (RAGAS)" color="#10b981" />
+          <StatBadge value={0} suffix=" / 6" label="False Positives on Legit Messages" color="#8b5cf6" />
+          <StatBadge value={10} suffix=" / 10" label="Money Assistant Answers Correct" color="#3b82f6" />
+          <StatBadge value={21} label="Fraud Patterns in 8 Categories" color="#f59e0b" />
+          <StatBadge value={5} label="Distributed Microservices" color="#ec4899" />
         </div>
       </section>
 
@@ -212,15 +212,15 @@ export default function Landing() {
         <div style={{ textAlign: "center", marginBottom: "56px" }}>
           <div style={{ fontSize: "11px", fontWeight: "800", color: "#10b981", letterSpacing: "2px", textTransform: "uppercase", marginBottom: "14px" }}>Enterprise Capabilities</div>
           <h2 style={{ fontSize: "clamp(28px, 4vw, 44px)", fontWeight: "900", color: "#f1f5f9", letterSpacing: "-0.03em", marginBottom: "14px" }}>Built for Production. Designed for Scale.</h2>
-          <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "560px", margin: "0 auto" }}>Every component is engineered with mathematical precision using industry-standard distributed systems patterns.</p>
+          <p style={{ color: "#64748b", fontSize: "16px", maxWidth: "560px", margin: "0 auto" }}>Every feature below is implemented and running in this deployment.</p>
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: "20px" }}>
-          <FeatureCard icon={<Cpu size={26} color="#10b981" />} color="#10b981" label="AI Engine" title="RAG Money Assistant" desc="Gemini-powered chatbot grounded in your real transaction history. Uses LangChain4j retrieval to answer spending questions with pinpoint accuracy." delay="0s" />
-          <FeatureCard icon={<Search size={26} color="#8b5cf6" />} color="#8b5cf6" label="Fraud Detection" title="pgvector Scam Scanner" desc="Cosine similarity search over 1,000+ fraud embeddings. Patterns 60pct+ match triggers Risk 75pct+ auto BLOCK with trust score reasoning." delay="0.1s" />
-          <FeatureCard icon={<Zap size={26} color="#f59e0b" />} color="#f59e0b" label="Payments" title="Razorpay UPI + QR Vault" desc="Full Razorpay order lifecycle, dynamic UPI QR generation, HMAC signature verification, and AES-256 GCM encrypted card tokenization." delay="0.2s" />
+          <FeatureCard icon={<Cpu size={26} color="#10b981" />} color="#10b981" label="AI Engine" title="RAG Money Assistant" desc="Gemini answers your spending questions using only your own SafePe transactions, in short formal replies. 10 of 10 answers correct in the RAGAS evaluation." delay="0s" />
+          <FeatureCard icon={<Search size={26} color="#8b5cf6" />} color="#8b5cf6" label="Fraud Detection" title="Fraud-Pattern RAG" desc="gemini-embedding-001 cosine similarity against 21 known scam patterns. A match of 0.75 or more raises the risk score to 75-99; 85 or more is blocked." delay="0.1s" />
+          <FeatureCard icon={<Zap size={26} color="#f59e0b" />} color="#f59e0b" label="Payments" title="Razorpay UPI + QR" desc="Razorpay order lifecycle, dynamic UPI QR generation, payment signature verification and provider tokenization, so full card numbers are never stored." delay="0.2s" />
           <FeatureCard icon={<Bell size={26} color="#ec4899" />} color="#ec4899" label="Real-time" title="Kafka SSE Notification Hub" desc="@Scheduled bill sweeper publishes BillReminderEvents to Kafka. Streams them via SSE with Web Audio API chimes directly to the UI bell." delay="0.3s" />
-          <FeatureCard icon={<Shield size={26} color="#3b82f6" />} color="#3b82f6" label="Gateway" title="Clerk JWT + Rate Limiter" desc="Spring Cloud Gateway validates Clerk JWKS signatures stateless. Bucket4j token-bucket enforces 100 req/min per IP with global CORS." delay="0.4s" />
-          <FeatureCard icon={<Database size={26} color="#06b6d4" />} color="#06b6d4" label="Data Layer" title="pgvector + Redis + Eureka" desc="Database-per-service isolation. Redis cuts vector query latency 40pct from 800ms to 480ms. Eureka provides dynamic service discovery." delay="0.5s" />
+          <FeatureCard icon={<Shield size={26} color="#3b82f6" />} color="#3b82f6" label="Gateway" title="Clerk JWT + Rate Limiter" desc="Spring Cloud Gateway verifies Clerk JWKS signatures and passes the user id to the services. Bucket4j applies per-user limits by route." delay="0.4s" />
+          <FeatureCard icon={<Database size={26} color="#06b6d4" />} color="#06b6d4" label="Data Layer" title="PostgreSQL + Redis + Eureka" desc="Database per service with Flyway migrations. Redis caches fraud-pattern search results for 5 minutes (about 8 ms on a hit). Eureka handles service discovery." delay="0.5s" />
         </div>
       </section>
 
@@ -266,26 +266,26 @@ export default function Landing() {
           </div>
 
           <div style={{ marginTop: "40px", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "32px" }}>
-            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "700", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "1px" }}>Vector Query Latency - Redis Cache Impact</div>
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: "700", marginBottom: "16px", textTransform: "uppercase", letterSpacing: "1px" }}>RAGAS Evaluation Results</div>
             <div style={{ display: "grid", gap: "12px" }}>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-                  <span style={{ color: "#64748b" }}>Standard pgvector Query</span>
-                  <span style={{ color: "#ef4444", fontWeight: "800" }}>800 ms</span>
+              {[
+                { label: "Fraud RAG: test scams caught", value: "12 / 12", pct: 100, color: "#10b981" },
+                { label: "Fraud RAG: legit messages allowed", value: "6 / 6", pct: 100, color: "#10b981" },
+                { label: "Money Assistant: answers correct", value: "10 / 10", pct: 100, color: "#3b82f6" },
+                { label: "Money Assistant: answer relevancy", value: "0.94", pct: 94, color: "#8b5cf6" },
+                { label: "Fraud RAG: summary faithfulness", value: "0.77", pct: 77, color: "#f59e0b" },
+              ].map((r) => (
+                <div key={r.label}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px", gap: "12px" }}>
+                    <span style={{ color: "#94a3b8" }}>{r.label}</span>
+                    <span style={{ color: r.color, fontWeight: "800", whiteSpace: "nowrap" }}>{r.value}</span>
+                  </div>
+                  <div style={{ height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
+                    <div style={{ width: r.pct + "%", height: "100%", background: r.color, borderRadius: "4px" }} />
+                  </div>
                 </div>
-                <div style={{ height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
-                  <div style={{ width: "100%", height: "100%", background: "linear-gradient(90deg, #ef4444, #dc2626)", borderRadius: "4px" }} />
-                </div>
-              </div>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "6px" }}>
-                  <span style={{ color: "#10b981", fontWeight: "700" }}>Redis 7 In-Memory Cache</span>
-                  <span style={{ color: "#10b981", fontWeight: "800" }}>480 ms - 40% faster</span>
-                </div>
-                <div style={{ height: "8px", background: "rgba(255,255,255,0.05)", borderRadius: "4px", overflow: "hidden" }}>
-                  <div style={{ width: "60%", height: "100%", background: "linear-gradient(90deg, #10b981, #059669)", borderRadius: "4px" }} />
-                </div>
-              </div>
+              ))}
+              <div style={{ fontSize: "11px", color: "#475569", marginTop: "4px" }}>Small test sets: 18 fraud cases and 10 assistant questions, judged by Gemini Flash.</div>
             </div>
           </div>
         </div>
@@ -298,8 +298,8 @@ export default function Landing() {
               <Lock size={20} color="#10b981" />
               <span style={{ fontSize: "11px", fontWeight: "800", color: "#10b981", textTransform: "uppercase", letterSpacing: "1.5px" }}>Security Architecture</span>
             </div>
-            <h3 style={{ fontSize: "24px", fontWeight: "800", color: "#f1f5f9", letterSpacing: "-0.02em", marginBottom: "10px" }}>Zero-Trust. Encrypted End-to-End.</h3>
-            <p style={{ fontSize: "14px", color: "#64748b", lineHeight: "1.7" }}>Every transaction is protected by multiple independent security layers.</p>
+            <h3 style={{ fontSize: "24px", fontWeight: "800", color: "#f1f5f9", letterSpacing: "-0.02em", marginBottom: "10px" }}>Layered Security.</h3>
+            <p style={{ fontSize: "14px", color: "#64748b", lineHeight: "1.7" }}>Every request passes through independent checks before it reaches your data.</p>
           </div>
           {securityItems.map((item) => (
             <div key={item.title} style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
@@ -339,7 +339,7 @@ export default function Landing() {
           </div>
           <span style={{ fontSize: "18px", fontWeight: "800", background: "linear-gradient(135deg,#10b981,#34d399)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SafePe</span>
         </div>
-        <p style={{ color: "#1e293b", fontSize: "11px" }}>Spring Boot 3.2 - React 19 - Kafka KRaft - pgvector - Redis 7 - AES-256 - AWS EC2</p>
+        <p style={{ color: "#1e293b", fontSize: "11px" }}>Spring Boot 3.2 - React 19 - Kafka KRaft - PostgreSQL 15 - Redis 7 - Gemini - AWS EC2</p>
       </footer>
 
       <style>{`

@@ -23,6 +23,10 @@ public class InsightsService {
         Map<String, Object> out = new LinkedHashMap<>();
 
         if (txns.isEmpty()) {
+            // Explicit zeros: a new user's page starts at ₹0, never at sample data.
+            out.put("totalSpent", BigDecimal.ZERO);
+            out.put("transactionCount", 0);
+            out.put("topPayees", List.of());
             out.put("summary", "No transactions yet.");
             out.put("narrative", "Start paying with SafePe and your spending insights will appear here.");
             return out;

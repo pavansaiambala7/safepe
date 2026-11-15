@@ -82,10 +82,14 @@ public class GeminiAIService {
 
         String url = String.format("%s/models/%s:generateContent?key=%s", baseUrl, model, apiKey);
 
+        // Fixed reply format: the chat UI reads the "Risk Score:" line to colour it
+        // (red = high risk, blue = moderate, green = safe).
         String prompt = "You are a cybersecurity expert for SafePe bank. " +
                 "Analyze the following SMS message for phishing or fraud. " +
-                "Give it a Risk Score from 0 (Safe) to 100 (Scam). " +
-                "Keep the explanation very short (1 sentence). " +
+                "Reply in exactly this format, in plain text with no Markdown or asterisks:\n" +
+                "Risk Score: <a number from 0 (safe) to 100 (scam)>/100\n" +
+                "Verdict: <Scam, Suspicious or Safe>\n" +
+                "Reason: <one formal sentence>\n" +
                 "Message: \"" + suspiciousMessage + "\"";
 
         Map<String, Object> requestBody = new HashMap<>();

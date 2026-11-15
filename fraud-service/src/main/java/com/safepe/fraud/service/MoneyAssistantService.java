@@ -14,6 +14,15 @@ import java.util.stream.Collectors;
 @Slf4j
 public class MoneyAssistantService {
 
+    /** Reply style shared by both prompts: the chat UI shows plain text. */
+    private static final String STYLE = """
+            REPLY STYLE:
+            - Write in a formal, professional tone, as a bank's financial advisor would.
+            - Answer in 4 to 5 complete sentences of plain prose, as one short paragraph.
+            - Do not use greetings, emojis, Markdown, asterisks, bullet points or headings.
+            - Use ₹ for amounts.
+            """;
+
     private final TransactionRepository transactionRepository;
     private final GeminiAIService geminiAIService;
 
@@ -22,14 +31,14 @@ public class MoneyAssistantService {
 
         if (txns == null || txns.isEmpty()) {
             String fallbackPrompt = """
-                    You are SafePe Money Assistant, an intelligent financial AI advisor.
-                    The user currently has no recorded transactions in their account yet.
-                    Answer their financial or payment question clearly, concisely, and helpfully.
-                    Provide practical budgeting, FD, saving, or UPI tips if relevant.
-                    Use ₹ for currency and keep a warm, professional tone.
+                    You are SafePe Money Assistant, a financial advisor in a payments app.
+                    The user has no recorded transactions yet, so do not refer to their spending.
+                    Answer their financial or payment question accurately, with practical
+                    budgeting, savings, fixed deposit or UPI guidance where relevant.
 
+                    %s
                     USER QUESTION: %s
-                    """.formatted(question);
+                    """.formatted(STYLE, question);
             return geminiAIService.chatWithAssistant(fallbackPrompt);
         }
 
@@ -50,23 +59,23 @@ public class MoneyAssistantService {
                 .collect(Collectors.joining("\n"));
 
         String prompt = """
-                You are SafePe Money Assistant, an advanced AI financial copilot grounded in the user's live transaction data (RAG).
-                
+                You are SafePe Money Assistant, a financial advisor grounded in the user's own transaction data.
+
                 USER FINANCIAL SUMMARY (Retrieved from Database):
                 - Total Transactions: %d
                 - Total Spent: ₹%s
-                
+
                 RECENT TRANSACTIONS:
                 %s
 
                 INSTRUCTIONS:
                 1. Answer the user's question accurately using their transaction data whenever applicable.
-                2. Be concise, friendly, and use bullet points when summarizing transactions or spending tips.
-                3. Use ₹ for amounts and never hallucinate transactions that are not in the list.
-                4. If asking for advice, give actionable money management and savings recommendations based on their habits.
+                2. Never mention transactions, payees or amounts that are not in the list above.
+                3. If the user asks for advice, base it on their actual spending habits.
 
+                %s
                 USER QUESTION: %s
-                """.formatted(txns.size(), totalSpent, context, question);
+                """.formatted(txns.size(), totalSpent, context, STYLE, question);
 
         return geminiAIService.chatWithAssistant(prompt);
     }

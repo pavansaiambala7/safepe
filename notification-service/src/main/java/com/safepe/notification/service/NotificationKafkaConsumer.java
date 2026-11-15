@@ -16,8 +16,8 @@ import java.util.UUID;
 /**
  * Kafka Consumer — Notification Service
  * =====================================
- * Consumes 'transaction-events' topic and pushes real-time Server-Sent Events (SSE)
- * notifications to connected clients for payment activity.
+ * Consumes the 'transaction-events' topic and pushes a Server-Sent Event (SSE)
+ * notification to the user who made the payment.
  */
 @Service
 @Slf4j
@@ -46,8 +46,8 @@ public class NotificationKafkaConsumer {
             String amount = event.getAmount() != null ? "₹" + event.getAmount() : "₹0";
             String txnId = event.getTransactionId() != null ? event.getTransactionId().toString() : "unknown";
 
-            // Payment success notification
-            notificationSSEService.broadcast(NotificationEvent.builder()
+            // Delivered only to the user who made the payment.
+            notificationSSEService.sendToUser(event.getUserId(), NotificationEvent.builder()
                     .id("notif-payment-" + UUID.randomUUID().toString().substring(0, 8))
                     .type("SUCCESS")
                     .title("Payment Successful")

@@ -218,7 +218,7 @@ class AudioAlertEngine {
   /**
    * Play appropriate audio chime based on notification type
    */
-  public playSoundForType(type: 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'REFUND_INITIATED' | 'SECURITY') {
+  public playSoundForType(type: 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'REFUND_INITIATED' | 'SECURITY' | 'REMINDER') {
     switch (type) {
       case 'SUCCESS':
         this.playSuccess();
@@ -233,6 +233,7 @@ class AudioAlertEngine {
         this.playRefundInitiated();
         break;
       case 'SECURITY':
+      case 'REMINDER':
         this.playSecurityChime();
         break;
     }

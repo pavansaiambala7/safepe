@@ -38,7 +38,7 @@ public class BillReminderConsumer {
             String when = e.getDaysUntilDue() == 0 ? "today"
                         : "in " + e.getDaysUntilDue() + " day" + (e.getDaysUntilDue() == 1 ? "" : "s");
 
-            sseService.broadcast(NotificationEvent.builder()
+            sseService.sendToUser(e.getUserId(), NotificationEvent.builder()
                     .id("notif-reminder-" + UUID.randomUUID().toString().substring(0, 8))
                     .type("REMINDER")
                     .title("Bill Due Soon")
@@ -49,7 +49,7 @@ public class BillReminderConsumer {
                     .timestamp(LocalDateTime.now())
                     .build());
 
-            log.info("🔔 Bill reminder pushed to SSE for user {}", e.getUserId());
+            log.info("Bill reminder processed for user {}", e.getUserId());
         } catch (Exception ex) {
             log.error("Failed to process bill reminder: {}", ex.getMessage());
         }

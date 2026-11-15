@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import { useAuth } from '@clerk/react';
 import { audioAlerts } from '../utils/audioAlert';
 
 export type NotificationType = 'SUCCESS' | 'FRAUD_ALERT' | 'ESCROW_REFUND' | 'REFUND_INITIATED' | 'SECURITY' | 'REMINDER';
@@ -43,119 +44,171 @@ interface NotificationContextType {
   closeToast: () => void;
 }
 
-const STORAGE_KEY = 'safepe_notifications_v2';
+// Notification history is stored per user, so a second account signed in on the
+// same browser never sees the first account's notifications. Older builds used
+// shared keys (and received every user's events); those are discarded.
+const LEGACY_STORAGE_KEYS = ['safepe_notifications', 'safepe_notifications_v2'];
+const storageKeyFor = (userId: string | null | undefined) =>
+  userId ? `safepe_notifications_v3_${userId}` : null;
+
+const readSaved = (key: string | null): NotificationItem[] => {
+  if (!key) return [];
+  try {
+    LEGACY_STORAGE_KEYS.forEach(k => localStorage.removeItem(k));
+    const saved = localStorage.getItem(key);
+    return saved ? JSON.parse(saved) : [];
+  } catch {
+    return [];
+  }
+};
+
+const STREAM_URL = '/api/v1/notifications/stream';
+const MAX_RETRY_DELAY_MS = 30000;
+
+/** Splits a Server-Sent Events chunk into complete events, returning the unparsed remainder. */
+const parseSseEvents = (buffer: string): { events: { name: string; data: string }[]; rest: string } => {
+  const events: { name: string; data: string }[] = [];
+  const blocks = buffer.split(/\r?\n\r?\n/);
+  const rest = blocks.pop() ?? '';
+  for (const block of blocks) {
+    let name = 'message';
+    const data: string[] = [];
+    for (const line of block.split(/\r?\n/)) {
+      if (line.startsWith('event:')) name = line.slice(6).trim();
+      else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''));
+    }
+    if (data.length) events.push({ name, data: data.join('\n') });
+  }
+  return { events, rest };
+};
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
-    // v2: earlier builds seeded demo notifications under 'safepe_notifications';
-    // drop those so users only ever see their real notifications.
-    try {
-      localStorage.removeItem('safepe_notifications');
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { isSignedIn, userId, getToken } = useAuth();
+  const storageKey = storageKeyFor(isSignedIn ? userId : null);
+
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => readSaved(storageKey));
+  const [owner, setOwner] = useState<string | null>(storageKey);
+
+  // Switch to the signed-in user's own history as soon as the user changes
+  // (React's "adjust state during render" pattern, so no frame shows the old list).
+  if (owner !== storageKey) {
+    setOwner(storageKey);
+    setNotifications(readSaved(storageKey));
+  }
 
   const [activeToast, setActiveToast] = useState<NotificationItem | null>(null);
   const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => audioAlerts.isEnabled());
   const [sseConnected, setSseConnected] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
+    if (!storageKey || owner !== storageKey) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications));
+      localStorage.setItem(storageKey, JSON.stringify(notifications));
     } catch {
       /* storage unavailable (private mode) - keep notifications in memory only */
     }
-  }, [notifications]);
+  }, [notifications, storageKey, owner]);
 
-  // ── SSE Connection to Backend Kafka Notification Stream ──────────────
+  // ── Per-user SSE stream ───────────────────────────────────────────────
+  // EventSource cannot send an Authorization header, so the stream is read with
+  // fetch. The gateway verifies the token and the service sends this user only
+  // their own events.
+  const getTokenRef = useRef(getToken);
+  getTokenRef.current = getToken;
+  const handleEventRef = useRef<(name: string, data: string) => void>(() => {});
+  handleEventRef.current = (name, data) => {
+    if (name === 'connected') {
+      setSseConnected(true);
+      return;
+    }
+    if (name !== 'notification') return;
+    try {
+      const event = JSON.parse(data);
+      const fraudDetails: FraudDetail | undefined =
+        (event.threatCategory || event.refundId) ? {
+          threatCategory: event.threatCategory || '',
+          similarityMatch: event.similarityMatch || 0,
+          matchedPatternDescription: event.matchedPatternDescription || '',
+          merchantName: event.merchantName || '',
+          merchantUpi: event.merchantUpi || event.upiId || '',
+          reportedCount: event.reportedCount || 0,
+          action: event.action || 'ALLOW',
+          refundId: event.refundId,
+          refundAmount: event.refundAmount
+        } : undefined;
+
+      addNotification({
+        type: event.type as NotificationType,
+        title: event.title,
+        message: event.message,
+        amount: event.amount,
+        upiId: event.upiId,
+        referenceId: event.referenceId,
+        fraudDetails
+      });
+    } catch (err) {
+      console.warn('[SafePe SSE] Failed to parse notification:', err);
+    }
+  };
+
   useEffect(() => {
-    let retryTimer: ReturnType<typeof setTimeout>;
-    let retryCount = 0;
-    const MAX_RETRIES = 10;
+    if (!isSignedIn || !userId) {
+      setSseConnected(false);
+      return;
+    }
 
-    const connectSSE = () => {
-      // Close existing connection if any
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
+    let stopped = false;
+    let controller: AbortController | null = null;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+    let failures = 0;
 
-      const eventSource = new EventSource('/api/v1/public/notifications/stream');
-      eventSourceRef.current = eventSource;
+    const connect = async () => {
+      controller = new AbortController();
+      let connected = false;
+      try {
+        const token = await getTokenRef.current();
+        const res = await fetch(STREAM_URL, {
+          headers: { Authorization: `Bearer ${token}`, Accept: 'text/event-stream' },
+          signal: controller.signal
+        });
+        if (!res.ok || !res.body) throw new Error(`stream returned HTTP ${res.status}`);
 
-      eventSource.addEventListener('connected', () => {
-        console.log('[SafePe SSE] Connected to notification stream');
-        setSseConnected(true);
-        retryCount = 0; // Reset retry counter on successful connection
-      });
-
-      eventSource.addEventListener('notification', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          console.log('[SafePe SSE] Received notification:', data.type, data.title);
-
-          // Map backend NotificationEvent to frontend NotificationItem
-          const notifType = data.type as NotificationType;
-          const fraudDetails: FraudDetail | undefined =
-            (data.threatCategory || data.refundId) ? {
-              threatCategory: data.threatCategory || '',
-              similarityMatch: data.similarityMatch || 0,
-              matchedPatternDescription: data.matchedPatternDescription || '',
-              merchantName: data.merchantName || '',
-              merchantUpi: data.merchantUpi || data.upiId || '',
-              reportedCount: data.reportedCount || 0,
-              action: data.action || 'ALLOW',
-              refundId: data.refundId,
-              refundAmount: data.refundAmount
-            } : undefined;
-
-          addNotification({
-            type: notifType,
-            title: data.title,
-            message: data.message,
-            amount: data.amount,
-            upiId: data.upiId,
-            referenceId: data.referenceId,
-            fraudDetails
+        const reader = res.body.pipeThrough(new TextDecoderStream()).getReader();
+        let buffer = '';
+        for (;;) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          const parsed = parseSseEvents(buffer + value);
+          buffer = parsed.rest;
+          parsed.events.forEach(e => {
+            if (e.name === 'connected') connected = true;
+            handleEventRef.current(e.name, e.data);
           });
-        } catch (err) {
-          console.warn('[SafePe SSE] Failed to parse notification:', err);
         }
-      });
+      } catch (err) {
+        if (!stopped) console.warn('[SafePe SSE] Stream error:', err);
+      }
+      if (stopped) return;
+      failures = connected ? 0 : failures + 1;
 
-      eventSource.onerror = () => {
-        setSseConnected(false);
-        eventSource.close();
-        eventSourceRef.current = null;
-
-        // Exponential backoff retry
-        if (retryCount < MAX_RETRIES) {
-          const delay = Math.min(1000 * Math.pow(2, retryCount), 30000);
-          retryCount++;
-          console.log(`[SafePe SSE] Reconnecting in ${delay}ms (attempt ${retryCount}/${MAX_RETRIES})...`);
-          retryTimer = setTimeout(connectSSE, delay);
-        } else {
-          console.log('[SafePe SSE] Max retries reached. SSE notifications offline.');
-        }
-      };
+      // The server closes the stream every 30 minutes; reconnect with a fresh
+      // token, backing off only when connecting keeps failing.
+      setSseConnected(false);
+      const delay = failures === 0 ? 1000 : Math.min(1000 * 2 ** failures, MAX_RETRY_DELAY_MS);
+      retryTimer = setTimeout(connect, delay);
     };
 
-    connectSSE();
+    connect();
 
     return () => {
+      stopped = true;
       clearTimeout(retryTimer);
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
+      controller?.abort();
+      setSseConnected(false);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [isSignedIn, userId]);
 
   const toggleSound = () => {
     const newState = audioAlerts.toggleSound();

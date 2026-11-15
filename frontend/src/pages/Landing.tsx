@@ -1,6 +1,6 @@
 ﻿import { useEffect, useRef, useState } from "react";
 import {
-  ShieldCheck, Lock, Zap, GitFork, Server,
+  ShieldCheck, Lock, Zap, Server,
   Radio, Database, Bell, ArrowRight, Activity,
   ChevronRight, Shield, Cpu, CreditCard, Search, BarChart3
 } from "lucide-react";
@@ -182,10 +182,6 @@ export default function Landing() {
                 Launch Dashboard <ArrowRight size={18} />
               </button>
             </SignInButton>
-            <a href="https://github.com/pavansaiambala7/safepe" target="_blank" rel="noopener noreferrer"
-              style={{ display: "inline-flex", alignItems: "center", gap: "10px", border: "1px solid rgba(255,255,255,0.12)", borderRadius: "50px", padding: "16px 30px", fontSize: "15px", fontWeight: "600", color: "#cbd5e1", textDecoration: "none", background: "rgba(255,255,255,0.04)", transition: "all 0.3s ease" }}>
-              <GitFork size={18} /> GitHub
-            </a>
           </div>
 
           <div style={{ display: "flex", justifyContent: "center", gap: "24px", flexWrap: "wrap", marginTop: "56px" }}>
@@ -343,10 +339,6 @@ export default function Landing() {
           </div>
           <span style={{ fontSize: "18px", fontWeight: "800", background: "linear-gradient(135deg,#10b981,#34d399)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>SafePe</span>
         </div>
-        <p style={{ color: "#334155", fontSize: "13px", marginBottom: "6px" }}>
-          Designed by{" "}
-          <a href="https://github.com/pavansaiambala7" target="_blank" rel="noopener noreferrer" style={{ color: "#10b981", fontWeight: "700", textDecoration: "none" }}>Pavan Sai Ambala</a>
-        </p>
         <p style={{ color: "#1e293b", fontSize: "11px" }}>Spring Boot 3.2 - React 19 - Kafka KRaft - pgvector - Redis 7 - AES-256 - AWS EC2</p>
       </footer>
 

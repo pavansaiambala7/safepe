@@ -8,7 +8,6 @@ import {
   Home,
   Brain,
   Radio,
-  GitFork,
   Bot
 } from 'lucide-react';
 
@@ -69,18 +68,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <Radio size={24} color="#06b6d4" />
             Kafka Event Monitor
           </Link>
-
-          {/* GitHub Author Profile */}
-          <a 
-            href="https://github.com/pavansaiambala7" 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="sidebar-link"
-            style={{ marginTop: 'auto', borderTop: '1px solid var(--color-border)', paddingTop: '16px' }}
-          >
-            <GitFork size={24} color="#1e293b" />
-            Author: @pavansaiambala7
-          </a>
         </nav>
       </div>
     </>

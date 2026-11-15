@@ -12,6 +12,40 @@ interface ChatMessage {
   category?: 'money' | 'scam';
 }
 
+
+// Chat font for assistant replies: a clean UI font, like mainstream chat apps.
+const CHAT_FONT = "'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
+// Risk score bands for the scam scanner: high risk red, moderate blue, safe green.
+const scoreBand = (score: number) =>
+  score >= 70 ? { color: '#dc2626', bg: '#fef2f2', border: '#fecaca', label: 'High Risk' }
+  : score <= 30 ? { color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', label: 'Safe' }
+  : { color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe', label: 'Moderate Risk' };
+
+// Light formatting for model text: **bold** becomes bold, "* item" becomes "• item".
+const renderText = (text: string) =>
+  text.replace(/^\s*[*-]\s+/gm, '• ').split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
+    part.startsWith('**') && part.endsWith('**')
+      ? <strong key={i}>{part.slice(2, -2)}</strong>
+      : <span key={i}>{part.replace(/\*/g, '')}</span>);
+
+const renderMessage = (msg: ChatMessage) => {
+  const m = msg.role === 'assistant' && msg.category === 'scam'
+    ? msg.content.match(/risk\s*score[^0-9]{0,15}(\d{1,3})/i) : null;
+  if (!m) return renderText(msg.content);
+  const score = Math.min(100, Number(m[1]));
+  const band = scoreBand(score);
+  const rest = msg.content.replace(/^.*risk\s*score.*$\n?/im, '').trim();
+  return (
+    <>
+      <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 12px', borderRadius: 10, marginBottom: rest ? 10 : 0, background: band.bg, border: `1px solid ${band.border}`, color: band.color, fontWeight: 800, fontSize: 14 }}>
+        Risk Score: {score}/100 <span style={{ fontWeight: 600, fontSize: 12 }}>• {band.label}</span>
+      </div>
+      {rest && <div>{renderText(rest)}</div>}
+    </>
+  );
+};
+
 export default function Scanner() {
   const [input, setInput] = useState('');
   const [activeTab, setActiveTab] = useState<'money' | 'scam'>('money');
@@ -21,7 +55,7 @@ export default function Scanner() {
     {
       id: 1,
       role: 'assistant',
-      content: "👋 Hi! I'm your **SafePe Money Assistant**.\n\nI can analyze your spending, look up past transactions, and give you smart budgeting advice. \n\n**Try asking:**\n• \"How much money did I spend on Food & Dining this month?\"\n• \"What was my largest transaction recently?\"\n• \"Give me a plan to save ₹5,000 this month.\"",
+      content: "Welcome to SafePe Money Assistant. I can review your spending, find past transactions and suggest practical ways to save. For example, you may ask how much you spent this month, what your largest payment was, or how to save ₹5,000. Please type your question below to begin.",
       timestamp: new Date(),
       isRagGrounded: true,
       category: 'money'
@@ -33,7 +67,7 @@ export default function Scanner() {
     {
       id: 2,
       role: 'assistant',
-      content: "🛡️ **SafePe Scam & Fraud Shield**\n\nPaste any suspicious SMS, payment link, or UPI ID below. I will analyze it against known phishing patterns and give you an instant Risk & Trust verdict.",
+      content: "SafePe Scam & Fraud Shield. Paste any suspicious SMS, payment link or UPI ID below, and it will be checked against known fraud patterns. You will receive a risk score from 0 to 100 with a short verdict.",
       timestamp: new Date(),
       isRagGrounded: false,
       category: 'scam'
@@ -325,15 +359,16 @@ export default function Scanner() {
                   border: msg.role === 'assistant'
                     ? '1px solid var(--color-border)'
                     : 'none',
-                  lineHeight: '1.65',
-                  fontSize: '14px',
+                  lineHeight: msg.role === 'assistant' ? '1.7' : '1.65',
+                  fontSize: msg.role === 'assistant' ? '14.5px' : '14px',
+                  fontFamily: msg.role === 'assistant' ? CHAT_FONT : 'inherit',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
                   boxShadow: msg.role === 'user' 
                     ? '0 4px 14px rgba(0,0,0,0.12)' 
                     : '0 2px 8px rgba(0,0,0,0.03)'
                 }}>
-                  {msg.content}
+                  {msg.role === 'assistant' ? renderMessage(msg) : msg.content}
                 </div>
 
                 <div style={{

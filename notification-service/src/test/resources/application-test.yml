@@ -1,0 +1,4 @@
+# Test profile: no Eureka. Kafka's address comes from Testcontainers.
+eureka:
+  client:
+    enabled: false

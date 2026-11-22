@@ -33,6 +33,7 @@ Five Spring Boot microservices connected by Kafka, with a Gemini Money Assistant
 - [API Reference](#-api-reference)
 - [Quick Start](#-quick-start)
 - [Deploying to AWS EC2](#%EF%B8%8F-deploying-to-aws-ec2)
+- [Testing](#-testing)
 - [Project Structure](#-project-structure)
 
 ---
@@ -363,6 +364,32 @@ To rebuild only what changed, name the services, for example `docker compose bui
 
 ---
 
+## 🧪 Testing
+
+Every push and pull request runs the full test suite and the frontend build on GitHub Actions ([`ci.yml`](.github/workflows/ci.yml)).
+
+| Kind | What it checks | Tools |
+|---|---|---|
+| Unit | Fraud risk scoring, vector search and caching, insights totals, Money Assistant prompts, payment orders and signatures, bill reminder window, Kafka message handling | JUnit 5, Mockito, AssertJ |
+| Web slice | Request validation, error format, user id taken only from the gateway header | `@WebMvcTest`, MockMvc |
+| Database | Flyway migrations on real PostgreSQL 15, entities validated against the schema, repository queries | `@DataJpaTest`, Testcontainers |
+| Integration | Real Kafka → notification-service → SSE: each event reaches only its owner | `@SpringBootTest`, Testcontainers, JDK `HttpClient` |
+| Gateway | JWT signature, issuer and expiry checks against a local JWKS server; rate limits and `429` | Reactor test, JDK `HttpServer` |
+| Architecture | Controller → service → repository layering, no field injection | ArchUnit |
+
+Run them locally with Docker only (no JDK needed):
+
+```bash
+scripts/test.sh                      # all services
+scripts/test.sh -pl fraud-service    # one service
+```
+
+With JDK 17 installed you can run `./mvnw verify` directly. Coverage reports are written to `<service>/target/site/jacoco/index.html`.
+
+Tests marked `@Disabled("Known bug, fixed in Phase N …")` describe correct behaviour that the code does not have yet. Each is switched on when its fix lands.
+
+---
+
 ## 📂 Project Structure
 
 ```
@@ -375,6 +402,8 @@ safepe/
 ├── frontend/               React 19 + TypeScript + Vite SPA, served by nginx
 ├── rag-eval/               RAGAS evaluation: test sets, runner and results
 ├── docs/                   Architecture images and deployment guide
+├── scripts/test.sh         Run all backend tests in Docker
+├── .github/workflows/      CI: backend tests + frontend build
 ├── docker-compose.yml      Full stack: services, PostgreSQL 15, Redis 7, Kafka (KRaft)
 └── pom.xml                 Maven multi-module parent
 ```

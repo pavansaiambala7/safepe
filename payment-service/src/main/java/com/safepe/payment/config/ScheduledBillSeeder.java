@@ -2,7 +2,6 @@ package com.safepe.payment.config;
 
 import com.safepe.payment.model.ScheduledBill;
 import com.safepe.payment.repository.ScheduledBillRepository;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -13,14 +12,18 @@ import java.time.LocalDate;
 import java.util.List;
 
 @Component
-@RequiredArgsConstructor
 @Slf4j
 public class ScheduledBillSeeder implements CommandLineRunner {
 
     private final ScheduledBillRepository billRepository;
 
-    @Value("${safepe.demo.user-id:demo_user}")
-    private String demoUserId;
+    private final String demoUserId;
+
+    public ScheduledBillSeeder(ScheduledBillRepository billRepository,
+                               @Value("${safepe.demo.user-id:demo_user}") String demoUserId) {
+        this.billRepository = billRepository;
+        this.demoUserId = demoUserId;
+    }
 
     @Override
     public void run(String... args) {

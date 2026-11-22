@@ -4,6 +4,7 @@ import com.razorpay.Order;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
 import com.razorpay.Utils;
+import com.safepe.payment.config.RazorpayProperties;
 import com.safepe.payment.exception.ExternalServiceException;
 import com.safepe.payment.dto.TransactionEvent;
 import com.safepe.payment.model.Transaction;
@@ -11,7 +12,6 @@ import com.safepe.payment.repository.TransactionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,11 +30,7 @@ public class PaymentService {
     private final TransactionRepository transactionRepository;
     private final PaymentEventProducer paymentEventProducer;
 
-    @Value("${safepe.razorpay.webhook-secret:dummy_webhook_secret}")
-    private String webhookSecret;
-
-    @Value("${safepe.razorpay.key-id:rzp_test_T5AtiMDfqh5J2N}")
-    private String keyId;
+    private final RazorpayProperties razorpay;
 
     @Transactional
     public Map<String, Object> createPaymentOrder(String userId, String upiId, BigDecimal amount) {
@@ -84,7 +80,7 @@ public class PaymentService {
             response.put("amount", amount);
             response.put("currency", "INR");
             response.put("dbTransactionId", transaction.getId());
-            response.put("keyId", keyId);
+            response.put("keyId", razorpay.keyId());
             return response;
 
         } catch (RazorpayException e) {
@@ -104,7 +100,7 @@ public class PaymentService {
             options.put("razorpay_payment_id", paymentId);
             options.put("razorpay_signature", signature);
 
-            boolean isVerified = Utils.verifyPaymentSignature(options, webhookSecret);
+            boolean isVerified = Utils.verifyPaymentSignature(options, razorpay.webhookSecret());
 
             if (isVerified) {
                 log.info("Payment Verified Successfully!");

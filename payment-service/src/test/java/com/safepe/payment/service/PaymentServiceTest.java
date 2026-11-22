@@ -4,6 +4,7 @@ import com.razorpay.Order;
 import com.razorpay.OrderClient;
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
+import com.safepe.payment.config.RazorpayProperties;
 import com.safepe.payment.dto.TransactionEvent;
 import com.safepe.payment.exception.ExternalServiceException;
 import com.safepe.payment.model.Transaction;
@@ -14,7 +15,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
@@ -44,9 +44,8 @@ class PaymentServiceTest {
     void setUp() throws RazorpayException {
         RazorpayClient razorpay = new RazorpayClient("rzp_test_key", KEY_SECRET);
         razorpay.orders = orderClient;
-        service = new PaymentService(razorpay, transactions, producer);
-        ReflectionTestUtils.setField(service, "keyId", "rzp_test_key");
-        ReflectionTestUtils.setField(service, "webhookSecret", WEBHOOK_SECRET);
+        service = new PaymentService(razorpay, transactions, producer,
+                new RazorpayProperties("rzp_test_key", KEY_SECRET, WEBHOOK_SECRET));
         when(transactions.save(any(Transaction.class))).thenAnswer(inv -> {
             Transaction t = inv.getArgument(0);
             t.setId(UUID.randomUUID());

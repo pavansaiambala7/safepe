@@ -2,10 +2,10 @@ package com.safepe.payment.service;
 
 import com.razorpay.RazorpayClient;
 import com.razorpay.RazorpayException;
+import com.safepe.payment.config.RazorpayProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -17,8 +17,7 @@ public class BBPSService {
 
     private final RazorpayClient razorpayClient;
 
-    @Value("${safepe.razorpay.key-id:rzp_test_T5AtiMDfqh5J2N}")
-    private String razorpayKeyId;
+    private final RazorpayProperties razorpay;
 
     public List<Map<String, Object>> getBillers(String category) {
         log.info("📋 Fetching billers for category: {}", category);
@@ -123,7 +122,7 @@ public class BBPSService {
             response.put("amount", amount);
             response.put("amount_paise", amountInPaise);
             response.put("currency", "INR");
-            response.put("razorpay_key_id", razorpayKeyId);
+            response.put("razorpay_key_id", razorpay.keyId());
             response.put("biller_id", billerId);
             response.put("customer_identifier", customerIdentifier);
             response.put("category", category);

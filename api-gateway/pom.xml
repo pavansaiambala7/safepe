@@ -23,6 +23,7 @@
         <java-jwt.version>4.4.0</java-jwt.version>
         <jwks-rsa.version>0.22.1</jwks-rsa.version>
         <bucket4j.version>8.10.1</bucket4j.version>
+        <jacoco.version>0.8.12</jacoco.version>
     </properties>
 
     <dependencies>
@@ -76,6 +77,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.projectreactor</groupId>
+            <artifactId>reactor-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -103,6 +109,34 @@
                         </exclude>
                     </excludes>
                 </configuration>
+            </plugin>
+            <!-- Test coverage: `mvnw verify` writes target/site/jacoco/index.html -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Record only our own classes. By default the agent records every
+                                 loaded class (Spring, Hibernate, Kafka...), producing a multi-MB
+                                 file that is slow to write at JVM exit. -->
+                            <includes>
+                                <include>com/safepe/**</include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

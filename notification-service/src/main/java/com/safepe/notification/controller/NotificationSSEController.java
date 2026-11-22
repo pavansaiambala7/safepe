@@ -1,10 +1,10 @@
 package com.safepe.notification.controller;
 
-import com.safepe.notification.exception.SafePeException;
 import com.safepe.notification.service.NotificationSSEService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
@@ -24,11 +24,13 @@ public class NotificationSSEController {
      * from outside the Docker network, so the header cannot be forged.
      */
     @GetMapping(value = "/api/v1/notifications/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter subscribe(@RequestHeader(value = "X-User-Id", required = false) String userId) {
+    public ResponseEntity<SseEmitter> subscribe(@RequestHeader(value = "X-User-Id", required = false) String userId) {
         if (userId == null || userId.isBlank()) {
-            throw new SafePeException("UNAUTHORIZED", "Sign in to receive notifications.", HttpStatus.UNAUTHORIZED);
+            // Bodiless on purpose: the client asked for text/event-stream, so a JSON
+            // error body cannot be written and would turn this 401 into a 500.
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return notificationSSEService.subscribe(userId);
+        return ResponseEntity.ok(notificationSSEService.subscribe(userId));
     }
 
     @GetMapping("/api/v1/public/notifications/status")

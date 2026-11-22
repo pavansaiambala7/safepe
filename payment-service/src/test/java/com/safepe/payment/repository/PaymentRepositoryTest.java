@@ -3,7 +3,6 @@ package com.safepe.payment.repository;
 import com.safepe.payment.model.ScheduledBill;
 import com.safepe.payment.model.Transaction;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -25,8 +24,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class PaymentRepositoryTest extends PostgresTestBase {
 
-    @Autowired TransactionRepository transactions;
-    @Autowired ScheduledBillRepository bills;
+    private final TransactionRepository transactions;
+    private final ScheduledBillRepository bills;
+
+    PaymentRepositoryTest(TransactionRepository transactions, ScheduledBillRepository bills) {
+        this.transactions = transactions;
+        this.bills = bills;
+    }
 
     @Test
     void savesTransactionAndFindsItByRazorpayOrderId() {

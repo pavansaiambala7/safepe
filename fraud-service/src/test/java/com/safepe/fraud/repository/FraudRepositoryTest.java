@@ -3,7 +3,6 @@ package com.safepe.fraud.repository;
 import com.safepe.fraud.model.FraudPattern;
 import com.safepe.fraud.model.Transaction;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -24,8 +23,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @ActiveProfiles("test")
 class FraudRepositoryTest extends PostgresTestBase {
 
-    @Autowired TransactionRepository transactions;
-    @Autowired FraudPatternRepository patterns;
+    private final TransactionRepository transactions;
+    private final FraudPatternRepository patterns;
+
+    FraudRepositoryTest(TransactionRepository transactions, FraudPatternRepository patterns) {
+        this.transactions = transactions;
+        this.patterns = patterns;
+    }
 
     private Transaction txn(String user, String amount, LocalDateTime at) {
         return Transaction.builder().id(UUID.randomUUID()).userId(user).payeeUpi("shop@oksbi")

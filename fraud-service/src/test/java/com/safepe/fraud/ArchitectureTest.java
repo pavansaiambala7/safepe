@@ -4,13 +4,12 @@ import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
-import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noFields;
 
 /**
  * Layering rules: controller -> service -> repository, never backwards.
+ * Injection rules live in InjectionRulesTest.
  * Breaking one fails the build, so the structure cannot erode silently.
  */
 @AnalyzeClasses(packages = "com.safepe.fraud", importOptions = ImportOption.DoNotIncludeTests.class)
@@ -35,15 +34,4 @@ class ArchitectureTest {
     static final ArchRule entitiesStayPersistenceOnly = noClasses()
             .that().resideInAPackage("..model..")
             .should().dependOnClassesThat().resideInAnyPackage("..service..", "..controller..", "..dto..");
-
-    /**
-     * No @Autowired/@Inject fields. Phase 1 replaces the remaining @Value fields
-     * with @ConfigurationProperties and switches this to
-     * GeneralCodingRules.NO_CLASSES_SHOULD_USE_FIELD_INJECTION, which also bans @Value.
-     */
-    @ArchTest
-    static final ArchRule constructorInjectionOnly = noFields()
-            .should().beAnnotatedWith(Autowired.class)
-            .orShould().beAnnotatedWith("jakarta.inject.Inject")
-            .because("dependencies should be final and passed through the constructor");
 }

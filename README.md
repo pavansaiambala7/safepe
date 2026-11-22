@@ -375,7 +375,7 @@ Every push and pull request runs the full test suite and the frontend build on G
 | Database | Flyway migrations on real PostgreSQL 15, entities validated against the schema, repository queries | `@DataJpaTest`, Testcontainers |
 | Integration | Real Kafka → notification-service → SSE: each event reaches only its owner | `@SpringBootTest`, Testcontainers, JDK `HttpClient` |
 | Gateway | JWT signature, issuer and expiry checks against a local JWKS server; rate limits and `429` | Reactor test, JDK `HttpServer` |
-| Architecture | Controller → service → repository layering, no field injection | ArchUnit |
+| Architecture | Controller → service → repository layering; constructor injection only (no `@Autowired`, no injected fields), in tests too | ArchUnit |
 
 Run them locally with Docker only (no JDK needed):
 

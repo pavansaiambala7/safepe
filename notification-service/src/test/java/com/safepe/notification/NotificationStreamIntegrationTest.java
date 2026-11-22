@@ -3,7 +3,6 @@ package com.safepe.notification;
 import com.safepe.notification.config.KafkaConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -49,8 +48,13 @@ class NotificationStreamIntegrationTest {
         registry.add("spring.kafka.bootstrap-servers", KAFKA::getBootstrapServers);
     }
 
-    @LocalServerPort int port;
-    @Autowired KafkaTemplate<String, String> kafka;
+    private final int port;
+    private final KafkaTemplate<String, String> kafka;
+
+    NotificationStreamIntegrationTest(@LocalServerPort int port, KafkaTemplate<String, String> kafka) {
+        this.port = port;
+        this.kafka = kafka;
+    }
 
     private final HttpClient http = HttpClient.newHttpClient();
     private final List<java.util.concurrent.CompletableFuture<?>> openStreams = new ArrayList<>();

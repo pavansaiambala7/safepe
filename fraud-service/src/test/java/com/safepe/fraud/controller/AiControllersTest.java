@@ -9,7 +9,6 @@ import com.safepe.fraud.service.agent.AgenticFraudEngine;
 import com.safepe.fraud.service.rag.VectorSearchService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -31,14 +30,24 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest({AssistantController.class, MoneyAssistantController.class, InsightsController.class, FraudCheckController.class})
 @Import(SecurityConfig.class)
+@MockBean({MoneyAssistantService.class, InsightsService.class, GeminiAIService.class,
+        AgenticFraudEngine.class, VectorSearchService.class})
 class AiControllersTest {
 
-    @Autowired MockMvc mvc;
-    @MockBean MoneyAssistantService moneyAssistant;
-    @MockBean InsightsService insights;
-    @MockBean GeminiAIService gemini;
-    @MockBean AgenticFraudEngine fraudEngine;
-    @MockBean VectorSearchService vectorSearch;
+    private final MockMvc mvc;
+    private final MoneyAssistantService moneyAssistant;
+    private final InsightsService insights;
+    private final GeminiAIService gemini;
+    private final AgenticFraudEngine fraudEngine;
+
+    AiControllersTest(MockMvc mvc, MoneyAssistantService moneyAssistant, InsightsService insights,
+                      GeminiAIService gemini, AgenticFraudEngine fraudEngine) {
+        this.mvc = mvc;
+        this.moneyAssistant = moneyAssistant;
+        this.insights = insights;
+        this.gemini = gemini;
+        this.fraudEngine = fraudEngine;
+    }
 
     @Test
     void chatUsesHeaderUserAndIgnoresUserIdInBody() throws Exception {

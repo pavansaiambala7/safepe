@@ -6,7 +6,6 @@ import com.safepe.payment.repository.ScheduledBillRepository;
 import com.safepe.payment.service.BillReminderScheduler;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -27,11 +26,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @WebMvcTest(BillController.class)
 @Import(SecurityConfig.class)
+@MockBean({ScheduledBillRepository.class, BillReminderScheduler.class})
 class BillControllerTest {
 
-    @Autowired MockMvc mvc;
-    @MockBean ScheduledBillRepository bills;
-    @MockBean BillReminderScheduler scheduler;
+    private final MockMvc mvc;
+    private final ScheduledBillRepository bills;
+    private final BillReminderScheduler scheduler;
+
+    BillControllerTest(MockMvc mvc, ScheduledBillRepository bills, BillReminderScheduler scheduler) {
+        this.mvc = mvc;
+        this.bills = bills;
+        this.scheduler = scheduler;
+    }
 
     @Test
     void listsOnlyTheCallersBills() throws Exception {

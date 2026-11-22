@@ -4,7 +4,6 @@ import com.safepe.payment.config.SecurityConfig;
 import com.safepe.payment.service.PaymentService;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
@@ -26,10 +25,16 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  */
 @WebMvcTest(PaymentController.class)
 @Import(SecurityConfig.class)
+@MockBean(PaymentService.class)
 class PaymentControllerTest {
 
-    @Autowired MockMvc mvc;
-    @MockBean PaymentService paymentService;
+    private final MockMvc mvc;
+    private final PaymentService paymentService;
+
+    PaymentControllerTest(MockMvc mvc, PaymentService paymentService) {
+        this.mvc = mvc;
+        this.paymentService = paymentService;
+    }
 
     private static final String VALID_BODY = "{\"amount\": 250.00, \"upiId\": \"shop@oksbi\"}";
 
